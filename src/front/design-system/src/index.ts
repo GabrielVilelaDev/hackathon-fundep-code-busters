@@ -70,3 +70,5 @@ export * from "./lib/design-system-utils";
 export { cn } from "./lib/utils";
 
 export { Sidebar } from "./components/SideBar";
+
+export { Modal } from "./components/Modal";
