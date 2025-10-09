@@ -1,0 +1,6 @@
+@AnalisarEAprovarProposta_HostAddress = http://localhost:5278
+
+GET {{AnalisarEAprovarProposta_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
