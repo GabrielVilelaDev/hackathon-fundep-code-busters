@@ -10,4 +10,9 @@
     <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Hackathon.IniciarProjeto.Application\Hackathon.IniciarProjeto.Application.csproj" />
+    <ProjectReference Include="..\Hackathon.IniciarProjeto.Infrastructure\Hackathon.IniciarProjeto.Infrastructure.csproj" />
+  </ItemGroup>
+
 </Project>
