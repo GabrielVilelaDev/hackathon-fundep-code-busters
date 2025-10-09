@@ -5,7 +5,7 @@ module.exports = {
     {
       pattern:
         /^(w-|h-|bg-|text-|border-|p-|m-|space-|max-w-|max-h-|mx-|cursor-|transition-|hover:|md:|grid-|flex-|shadow-)/,
-      variants: ["hover", "focus", "md", "lg", "xl"]
+      variants: ["hover", "focus", "md", "lg", "xl", "2xl"],
     },
     "hidden",
     "w-[20px]",

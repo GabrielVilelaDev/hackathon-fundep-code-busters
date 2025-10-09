@@ -1,0 +1,108 @@
+import { createBrowserRouter, Navigate } from 'react-router-dom'
+import { lazy, Suspense } from 'react'
+import { LoadingSpinner } from '@design-system'
+
+const RootLayout = lazy(() => import('@/shared/components/layout/RootLayout'))
+const AuthLayout = lazy(() => import('@/shared/components/layout/AuthLayout'))
+
+const LoginPage = lazy(() => import('@/modules/auth/pages/LoginPage'))
+
+const DashboardPage = lazy(() => import('@/modules/prospeccao/pages/DashboardPage'))
+const AprovacoesPage = lazy(() => import('@/modules/prospeccao/pages/AprovacoesPage'))
+const RelatoriosPage = lazy(() => import('@/modules/prospeccao/pages/RelatoriosPage'))
+const ConfiguracoesPage = lazy(() => import('@/modules/prospeccao/pages/ConfiguracoesPage'))
+const ProspeccaoDashboard = lazy(() => import('@/modules/prospeccao/pages/Dashboard'))
+const PropostasListPage = lazy(() => import('@/modules/prospeccao/pages/PropostasListPage'))
+const PropostaDetailPage = lazy(() => import('@/modules/prospeccao/pages/PropostaDetailPage'))
+const NovaPropostaPage = lazy(() => import('@/modules/prospeccao/pages/NovaPropostaPage'))
+
+
+const LazyRoute = ({ children }: { children: React.ReactNode }) => {
+  return <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
+}
+
+export const router = createBrowserRouter([
+  {
+    path: '/login',
+    element: (
+      <LazyRoute>
+        <AuthLayout />
+      </LazyRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <LoginPage />,
+      },
+    ],
+  },
+
+  {
+    path: '/',
+    element: (
+      <LazyRoute>
+        <RootLayout />
+      </LazyRoute>
+    ),
+    children: [
+      {
+        index: true,
+        element: <Navigate to="/dashboard" replace />,
+      },
+      {
+        path: 'dashboard',
+        element: <DashboardPage />,
+      },
+      {
+        path: 'aprovacoes',
+        element: <AprovacoesPage />,
+      },
+      {
+        path: 'relatorios',
+        element: <RelatoriosPage />,
+      },
+      {
+        path: 'configuracoes',
+        element: <ConfiguracoesPage />,
+      },
+      {
+        path: 'prospeccao',
+        children: [
+          {
+            index: true,
+            element: <ProspeccaoDashboard />,
+          },
+          {
+            path: 'propostas',
+            children: [
+              {
+                index: true,
+                element: <PropostasListPage />,
+              },
+              {
+                path: 'nova',
+                element: <NovaPropostaPage />,
+              },
+              {
+                path: ':id',
+                element: <PropostaDetailPage />,
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+
+  {
+    path: '*',
+    element: (
+      <div className="flex h-screen items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold">404</h1>
+          <p className="mt-2 text-muted-foreground">Página não encontrada</p>
+        </div>
+      </div>
+    ),
+  },
+])

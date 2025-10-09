@@ -68,3 +68,5 @@ export type * from "./types";
 export * from "./lib/design-system-utils";
 
 export { cn } from "./lib/utils";
+
+export { Sidebar } from "./components/SideBar";

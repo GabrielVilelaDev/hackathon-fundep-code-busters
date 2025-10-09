@@ -16,10 +16,10 @@ import type { FormFieldProps } from "@/types";
 
 export interface InputFormProps<T extends FieldValues = FieldValues>
   extends Omit<React.ComponentProps<"input">, "name">,
-    FormFieldProps {
+  FormFieldProps {
   name: Path<T>;
   control: Control<T>;
-  type?: "text" | "number";
+  type?: "text" | "number" | "password" | "email";
 }
 
 export interface InputCommonProps extends Omit<InputFormProps, "control"> {
