@@ -52,7 +52,7 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 // Endpoints da API
-app.MapPost("/projetos/importar", async (
+app.MapPost("/projetos", async (
     ImportarProjetoDto dto,
     IValidator<ImportarProjetoDto> validator,
     IniciarProjetoHandler handler) =>
