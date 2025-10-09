@@ -1,0 +1,6 @@
+@Hackathon.IniciarProjeto.Api_HostAddress = http://localhost:5052
+
+GET {{Hackathon.IniciarProjeto.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
