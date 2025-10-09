@@ -22,6 +22,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon.IniciarProjeto.In
 		{AE430BB9-FD45-4CD6-97EB-C90AEA634D7B} = {AE430BB9-FD45-4CD6-97EB-C90AEA634D7B}
 	EndProjectSection
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Hackathon.IniciarProjeto.Application.Test", "Hackathon.IniciarProjeto.Application.Test\Hackathon.IniciarProjeto.Application.Test.csproj", "{F38EEFE1-C563-4FAE-8D2A-0B1DCDEE09FC}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -44,6 +46,10 @@ Global
 		{30A7DCE9-035B-41E6-95A0-6BD35DA55A56}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{30A7DCE9-035B-41E6-95A0-6BD35DA55A56}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{30A7DCE9-035B-41E6-95A0-6BD35DA55A56}.Release|Any CPU.Build.0 = Release|Any CPU
+		{F38EEFE1-C563-4FAE-8D2A-0B1DCDEE09FC}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{F38EEFE1-C563-4FAE-8D2A-0B1DCDEE09FC}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{F38EEFE1-C563-4FAE-8D2A-0B1DCDEE09FC}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{F38EEFE1-C563-4FAE-8D2A-0B1DCDEE09FC}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
