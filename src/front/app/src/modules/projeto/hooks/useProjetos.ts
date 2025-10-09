@@ -10,8 +10,8 @@ import {
   AdicionarDocumentoDto,
   ProjetoResponseDto,
   Rubrica,
-} from '@/types/projetos.types'
-import { projetosService, rubricasService } from '@/services/projetos.service'
+} from '@/modules/projeto/services/types/projetos.types'
+import { projetosService, rubricasService } from '@/modules/projeto/services/projetos.service'
 import { AxiosError } from 'axios'
 
 // ============================================

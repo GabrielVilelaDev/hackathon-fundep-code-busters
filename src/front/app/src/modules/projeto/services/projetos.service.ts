@@ -11,7 +11,7 @@ import {
   AdicionarDocumentoDto,
   ProjetoResponseDto,
   Rubrica,
-} from '@/types/projetos.types'
+} from '@/modules/projeto/services/types/projetos.types'
 
 export const projetosService = {
   /**
