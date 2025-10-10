@@ -26,11 +26,11 @@ builder.Services.AddScoped<AtualizarProjetoHandler>();
 builder.Services.AddScoped<AdicionarDocumentoHandler>();
 builder.Services.AddScoped<ObterProjetoHandler>();
 
-// Registrar repositórios
+// Registrar repositï¿½rios
 builder.Services.AddSingleton<IProjetoRepository, ProjetoRepositoryInMemory>();
 builder.Services.AddSingleton<IRubricaRepository, RubricaRepositoryInMemory>();
 
-// Registrar serviços de infraestrutura
+// Registrar serviï¿½os de infraestrutura
 builder.Services.AddScoped<IEmailService, EmailServiceSimulado>();
 builder.Services.AddScoped<IEventPublisher, LocalEventPublisher>();
 
@@ -43,13 +43,29 @@ builder.Services.AddScoped<IEventHandler<DocumentoAdicionadoEvent>, LogarDocumen
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger em Development ou quando ENABLE_SWAGGER=true
+if (app.Environment.IsDevelopment() || 
+    app.Configuration.GetValue<bool>("ENABLE_SWAGGER", false))
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hackathon.IniciarProjeto.Api v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
 app.UseHttpsRedirection();
+
+// Endpoint de saÃºde para health check
+app.MapGet("/health", () => Results.Ok(new
+{
+    Status = "Healthy",
+    Timestamp = DateTime.UtcNow,
+    Service = "Hackathon.IniciarProjeto.Api"
+}))
+.WithName("Health")
+.WithTags("Health");
 
 // Endpoints da API
 app.MapPost("/projetos", async (
@@ -66,7 +82,7 @@ app.MapPost("/projetos", async (
     var projetoId = await handler.ExecutarAsync(dto);
     return Results.Created($"/projetos/{projetoId}", new { Id = projetoId });
 })
-.WithName("ImportarProjeto")
+.WithName("CadastrarProjeto")
 .WithTags("Projetos");
 
 app.MapGet("/projetos/{id:guid}", async (
