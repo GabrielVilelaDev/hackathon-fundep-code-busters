@@ -25,12 +25,13 @@ builder.Services.AddScoped<AtualizarStatusHandler>();
 builder.Services.AddScoped<AtualizarProjetoHandler>();
 builder.Services.AddScoped<AdicionarDocumentoHandler>();
 builder.Services.AddScoped<ObterProjetoHandler>();
+builder.Services.AddScoped<ListarProjetosHandler>();
 
-// Registrar reposit�rios
+// Registrar repositórios
 builder.Services.AddSingleton<IProjetoRepository, ProjetoRepositoryInMemory>();
 builder.Services.AddSingleton<IRubricaRepository, RubricaRepositoryInMemory>();
 
-// Registrar servi�os de infraestrutura
+// Registrar serviços de infraestrutura
 builder.Services.AddScoped<IEmailService, EmailServiceSimulado>();
 builder.Services.AddScoped<IEventPublisher, LocalEventPublisher>();
 
@@ -48,6 +49,17 @@ builder.Services.AddCors(options =>
                   .AllowAnyMethod()   // Permite qualquer método HTTP (GET, POST, etc.)
                   .AllowAnyHeader();  // Permite qualquer cabeçalho na requisição
         });
+});
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin() // Allows requests from any origin
+              .AllowAnyHeader()  // Allows any HTTP header
+              .AllowAnyMethod(); // Allows any HTTP method (GET, POST, PUT, DELETE, etc.)
+    });
 });
 
 var app = builder.Build();
@@ -95,6 +107,14 @@ app.MapPost("/projetos", async (
     return Results.Created($"/projetos/{projetoId}", new { Id = projetoId });
 })
 .WithName("CadastrarProjeto")
+.WithTags("Projetos");
+
+app.MapGet("/projetos", async (ListarProjetosHandler handler) =>
+{
+    var projetos = await handler.ExecutarAsync();
+    return Results.Ok(projetos);
+})
+.WithName("ListarProjetos")
 .WithTags("Projetos");
 
 app.MapGet("/projetos/{id:guid}", async (
@@ -146,6 +166,7 @@ app.MapPost("/projetos/{id:guid}/documentos", async (
 })
 .WithName("AdicionarDocumento")
 .WithTags("Projetos");
+
 // Endpoint para listar todas as rubricas
 app.MapGet("/rubricas", async (IRubricaRepository rubricaRepository) =>
 {
