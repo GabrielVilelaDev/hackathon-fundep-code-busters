@@ -273,7 +273,7 @@ export function NovoProjetoPage() {
           {/* Card 3: Subprojetos */}
           <Card>
             <CardContent className="pt-6 space-y-6">
-              <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center flex-wrap gap-2">
                 <h2 className="text-xl font-semibold">Subprojetos ({subprojetos.length})</h2>
                 <Button type="button" variant="outline" onClick={() => setIsModalOpen(true)}>
                   <Plus className="h-4 w-4 mr-2" />

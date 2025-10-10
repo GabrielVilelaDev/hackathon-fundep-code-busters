@@ -2,7 +2,12 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Eye, Edit, RefreshCw, Search, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
-import { LoadingSpinner, Button, Card, CardContent } from "@design-system";
+import { 
+  LoadingSpinner, 
+  Button, 
+  Card, 
+  CardContent
+} from "@design-system";
 import { EtapaProjetoLabels, type ProjetoResponse } from "../types/projeto.types";
 import { StatusUpdateModal } from "../components/StatusUpdateModal";
 import { projetoApi } from "../services/projetoApi";
@@ -96,7 +101,7 @@ export function ProjetosListPage() {
         </Card>
       )}
 
-      {/* Tabela */}
+      {/* Lista de Projetos em Cards */}
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <LoadingSpinner />
@@ -114,93 +119,66 @@ export function ProjetosListPage() {
           </CardContent>
         </Card>
       ) : (
-        <Card>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b bg-muted/50">
-                    <th className="h-12 px-4 text-left align-middle font-medium">
-                      Código
-                    </th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">
-                      Título
-                    </th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">
-                      Coordenador
-                    </th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">
-                      Etapa
-                    </th>
-                    <th className="h-12 px-4 text-left align-middle font-medium">
-                      Valor
-                    </th>
-                    <th className="h-12 px-4 text-right align-middle font-medium">
-                      Ações
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredProjetos.map((projeto) => (
-                    <tr key={projeto.id} className="border-b transition-colors hover:bg-muted/50">
-                      <td className="p-4 align-middle font-mono text-xs">
-                        {projeto.codigoProjeto}
-                      </td>
-                      <td className="p-4 align-middle">
-                        <div className="max-w-[300px]">
-                          <p className="font-medium truncate">{projeto.titulo}</p>
-                          <p className="text-xs text-muted-foreground truncate">
-                            {projeto.resumo}
-                          </p>
-                        </div>
-                      </td>
-                      <td className="p-4 align-middle">{projeto.coordenador}</td>
-                      <td className="p-4 align-middle">
-                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                          {EtapaProjetoLabels[projeto.etapa]}
-                        </span>
-                      </td>
-                      <td className="p-4 align-middle">
-                        {new Intl.NumberFormat("pt-BR", {
-                          style: "currency",
-                          currency: projeto.moeda || "BRL",
-                        }).format(projeto.valor)}
-                      </td>
-                      <td className="p-4 align-middle text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate(`/projetos/${projeto.id}`)}
-                            title="Visualizar"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => navigate(`/projetos/${projeto.id}/editar`)}
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleStatusUpdate(projeto)}
-                            title="Atualizar Status"
-                          >
-                            <RefreshCw className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {filteredProjetos.map((projeto) => (
+            <Card key={projeto.id} className="hover:shadow-md transition-shadow">
+              <CardContent className="pt-6">
+                <div className="space-y-4">
+                  {/* Header do Card */}
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-lg truncate">{projeto.titulo}</h3>
+                        <p className="text-xs text-muted-foreground font-mono">{projeto.codigoProjeto}</p>
+                      </div>
+                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap">
+                        {EtapaProjetoLabels[projeto.etapa]}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{projeto.resumo}</p>
+                  </div>
+
+                  {/* Informações */}
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-muted-foreground">Coordenador:</span>
+                      <span className="font-medium truncate">{projeto.coordenador}</span>
+                    </div>
+                  </div>
+
+                  {/* Ações */}
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1"
+                      onClick={() => navigate(`/projetos/${projeto.id}`)}
+                    >
+                      <Eye className="h-4 w-4 mr-2" />
+                      Visualizar
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => navigate(`/projetos/${projeto.id}/editar`)}
+                      title="Editar"
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleStatusUpdate(projeto)}
+                      title="Atualizar Status"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* Status Update Modal */}

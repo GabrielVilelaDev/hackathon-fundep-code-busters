@@ -9,6 +9,8 @@ import {
   DollarSign,
   User,
   FileText,
+  Info,
+  FolderTree,
 } from "lucide-react";
 import {
   Button,
@@ -111,37 +113,41 @@ export function ProjetoDetailPage() {
       </div>
 
       {/* Tabs */}
-      <div className="border-b">
+      <div className="border-b flex">
         <nav className="-mb-px flex gap-6">
           <button
             onClick={() => setActiveTab("geral")}
-            className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+            className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === "geral"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            Informações Gerais
+            <Info className="h-4 w-4" />
+            <span className="sm:inline hidden md:inline">Informações Gerais</span>
+            <span className="md:hidden">Geral</span>
           </button>
           <button
             onClick={() => setActiveTab("subprojetos")}
-            className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+            className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === "subprojetos"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            Subprojetos ({projeto.subprojetos.length})
+            <FolderTree className="h-4 w-4" />
+            <span className="hidden md:inline">Subprojetos ({projeto.subprojetos.length})</span>
           </button>
           <button
             onClick={() => setActiveTab("documentos")}
-            className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors ${
+            className={`border-b-2 py-2 px-1 text-sm font-medium transition-colors flex items-center gap-2 ${
               activeTab === "documentos"
                 ? "border-primary text-primary"
                 : "border-transparent text-muted-foreground hover:text-foreground"
             }`}
           >
-            Documentos ({projeto.documentos?.length || 0})
+            <FileText className="h-4 w-4" />
+            <span className="hidden md:inline">Documentos ({projeto.documentos?.length || 0})</span>
           </button>
         </nav>
       </div>
