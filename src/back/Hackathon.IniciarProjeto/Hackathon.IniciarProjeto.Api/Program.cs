@@ -30,6 +30,7 @@ builder.Services.AddScoped<ListarProjetosHandler>();
 // Registrar repositórios
 builder.Services.AddSingleton<IProjetoRepository, ProjetoRepositoryInMemory>();
 builder.Services.AddSingleton<IRubricaRepository, RubricaRepositoryInMemory>();
+builder.Services.AddSingleton<IDocumentoRepository, DocumentoRepositoryInMemory>();
 
 // Registrar serviços de infraestrutura
 builder.Services.AddScoped<IEmailService, EmailServiceSimulado>();

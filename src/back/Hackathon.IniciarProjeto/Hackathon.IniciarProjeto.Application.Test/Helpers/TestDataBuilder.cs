@@ -141,6 +141,18 @@ public static class TestDataBuilder
             }
         };
 
+        var documento = new Documento
+        {
+            Id = Guid.NewGuid(),
+            ProjetoId = projetoId,
+            NomeDocumento = "contrato-teste.pdf",
+            ConteudoBase64 = "base64-content-example",
+            TipoConteudo = "application/pdf",
+            Tamanho = 1024,
+            DataUpload = DateTime.UtcNow.AddDays(-1),
+            UsuarioUpload = "Sistema"
+        };
+
         return new Projeto
         {
             Id = projetoId,
@@ -191,7 +203,8 @@ public static class TestDataBuilder
             
             Etapa = EtapaProjeto.Iniciacao,
             DataCriacao = DateTime.UtcNow.AddDays(-1),
-            Subprojetos = new List<Subprojeto> { subprojeto }
+            Subprojetos = new List<Subprojeto> { subprojeto },
+            Documentos = new List<Documento> { documento }
         };
     }
 
@@ -229,6 +242,21 @@ public static class TestDataBuilder
         {
             NomeDocumento = nomeDocumento,
             ConteudoBase64 = conteudoBase64
+        };
+    }
+
+    public static Documento CriarDocumentoValido(Guid? projetoId = null)
+    {
+        return new Documento
+        {
+            Id = Guid.NewGuid(),
+            ProjetoId = projetoId ?? Guid.NewGuid(),
+            NomeDocumento = "documento-teste.pdf",
+            ConteudoBase64 = "base64-content-example",
+            TipoConteudo = "application/pdf",
+            Tamanho = 2048,
+            DataUpload = DateTime.UtcNow,
+            UsuarioUpload = "Usuario Teste"
         };
     }
 }
