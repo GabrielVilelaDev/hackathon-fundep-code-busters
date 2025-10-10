@@ -1,0 +1,66 @@
+name: Unit Tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '8.0.x'
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    # IniciarProjeto Tests
+    - name: Restore dependencies - IniciarProjeto
+      run: dotnet restore src/back/Hackathon.IniciarProjeto/Hackathon.IniciarProjeto.sln
+
+    - name: Build - IniciarProjeto
+      run: dotnet build src/back/Hackathon.IniciarProjeto/Hackathon.IniciarProjeto.sln --no-restore --configuration Release
+
+    - name: Test - IniciarProjeto
+      run: dotnet test src/back/Hackathon.IniciarProjeto/Hackathon.IniciarProjeto.Application.Test/Hackathon.IniciarProjeto.Application.Test.csproj --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/IniciarProjeto
+
+    # InscricaoEvento Tests
+    - name: Restore dependencies - InscricaoEvento
+      run: dotnet restore src/back/Hackathon.InscricaoEvento/Hackathon.InscricaoEvento.sln
+
+    - name: Build - InscricaoEvento
+      run: dotnet build src/back/Hackathon.InscricaoEvento/Hackathon.InscricaoEvento.sln --no-restore --configuration Release
+
+    - name: Test - InscricaoEvento
+      run: dotnet test src/back/Hackathon.InscricaoEvento/Hackathon.InscricaoEvento.Application.Test/Hackathon.InscricaoEvento.Application.Test.csproj --no-build --configuration Release --verbosity normal --logger trx --results-directory TestResults/InscricaoEvento
+
+    # Upload test results
+    - name: Upload test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: TestResults/
+        retention-days: 30
+
+    # Test reporting
+    - name: Test Report
+      uses: dorny/test-reporter@v1
+      if: success() || failure()
+      with:
+        name: Unit Tests Results
+        path: 'TestResults/**/*.trx'
+        reporter: dotnet-trx
+        fail-on-error: true
