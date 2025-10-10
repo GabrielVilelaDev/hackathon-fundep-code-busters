@@ -12,7 +12,21 @@ import {
 	CardContent,
 } from '@design-system';
 import { useListarMatriculasPorAluno } from '../hooks/useMatriculas';
-import { formatarData, formatarValor, TipoPagamentoLabels } from '../types/evento.types';
+import { formatarData, formatarValor, TipoPagamentoLabels, StatusMatriculaLabels, StatusMatricula } from '../types/evento.types';
+
+// Helper para cores do status
+const getStatusColor = (status: StatusMatricula) => {
+	switch (status) {
+		case StatusMatricula.Confirmada:
+			return 'bg-green-100 text-green-800 border-green-300';
+		case StatusMatricula.Pendente:
+			return 'bg-yellow-100 text-yellow-800 border-yellow-300';
+		case StatusMatricula.Cancelada:
+			return 'bg-red-100 text-red-800 border-red-300';
+		default:
+			return 'bg-gray-100 text-gray-800 border-gray-300';
+	}
+};
 
 export function MinhasMatriculasPage() {
 	const [searchTerm, setSearchTerm] = useState('');
@@ -146,8 +160,8 @@ export function MinhasMatriculasPage() {
 													</p>
 												</div>
 												{matricula.status && (
-													<span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap shrink-0">
-														{matricula.status}
+													<span className={`inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap shrink-0 ${getStatusColor(matricula.status)}`}>
+														{StatusMatriculaLabels[matricula.status]}
 													</span>
 												)}
 											</div>

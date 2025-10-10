@@ -15,6 +15,18 @@ export const TipoPagamentoLabels: Record<TipoPagamento, string> = {
   [TipoPagamento.Cartao]: "Cartão",
 };
 
+export enum StatusMatricula {
+  Pendente = 1,
+  Confirmada = 2,
+  Cancelada = 3,
+}
+
+export const StatusMatriculaLabels: Record<StatusMatricula, string> = {
+  [StatusMatricula.Pendente]: "Pendente",
+  [StatusMatricula.Confirmada]: "Confirmada",
+  [StatusMatricula.Cancelada]: "Cancelada",
+};
+
 // ============================================
 // DTOs - Request
 // ============================================
@@ -65,7 +77,7 @@ export interface MatriculaResponse {
   eventoId: string;
   tipoPagamento: TipoPagamento;
   evento?: EventoResponse;
-  status?: string;
+  status?: StatusMatricula;
   dataMatricula?: string;
   criadoEm?: string;
 }
