@@ -4,7 +4,6 @@ import {
   ArrowLeft,
   Edit,
   RefreshCw,
-  Upload,
   Calendar,
   DollarSign,
   User,
@@ -21,33 +20,14 @@ import {
 import { useProjeto } from "../hooks/useProjeto";
 import { EtapaProjetoLabels, TipoOrcamentoLabels } from "../types/projeto.types";
 import { StatusUpdateModal } from "../components/StatusUpdateModal";
-import { DocumentUpload } from "../components/DocumentUpload";
-import { useProjetoMutations } from "../hooks/useProjetoMutations";
 
 export function ProjetoDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { projeto, loading, error, refetch } = useProjeto(id);
-  const { adicionarDocumento } = useProjetoMutations();
   
   const [showStatusModal, setShowStatusModal] = useState(false);
   const [activeTab, setActiveTab] = useState<"geral" | "subprojetos" | "documentos">("geral");
-  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
-
-  const handleDocumentUpload = async (fileName: string, base64Content: string) => {
-    if (!id) return;
-    
-    try {
-      await adicionarDocumento(id, {
-        nomeDocumento: fileName,
-        conteudoBase64: base64Content,
-      });
-      refetch();
-      setShowDocumentUpload(false);
-    } catch (err) {
-      console.error("Erro ao fazer upload:", err);
-    }
-  };
 
   if (loading) {
     return (
@@ -319,23 +299,6 @@ export function ProjetoDetailPage() {
 
       {activeTab === "documentos" && (
         <div className="space-y-4">
-          <div className="flex justify-end">
-            <Button
-              onClick={() => setShowDocumentUpload(!showDocumentUpload)}
-            >
-              <Upload className="h-4 w-4" />
-              {showDocumentUpload ? "Cancelar" : "Adicionar Documento"}
-            </Button>
-          </div>
-
-          {showDocumentUpload && (
-            <Card>
-              <CardContent className="pt-6">
-                <DocumentUpload onFileSelect={handleDocumentUpload} />
-              </CardContent>
-            </Card>
-          )}
-
           <div className="space-y-2">
             {!projeto.documentos || projeto.documentos.length === 0 ? (
               <Card>

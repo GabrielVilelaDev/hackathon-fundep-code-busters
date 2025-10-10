@@ -119,19 +119,19 @@ export function ProjetosListPage() {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {filteredProjetos.map((projeto) => (
-            <Card key={projeto.id} className="hover:shadow-md transition-shadow">
+            <Card key={projeto.id} className="hover:shadow-md transition-shadow w-full">
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   {/* Header do Card */}
                   <div className="space-y-2">
                     <div className="flex items-start justify-between gap-2">
                       <div className="flex-1 min-w-0">
-                        <h3 className="font-semibold text-lg truncate">{projeto.titulo}</h3>
-                        <p className="text-xs text-muted-foreground font-mono">{projeto.codigoProjeto}</p>
+                        <h3 className="font-semibold text-base sm:text-lg truncate">{projeto.titulo}</h3>
+                        <p className="text-xs text-muted-foreground font-mono truncate">{projeto.codigoProjeto}</p>
                       </div>
-                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold whitespace-nowrap">
+                      <span className="inline-flex items-center rounded-full border px-2 py-0.5 text-xs font-semibold whitespace-nowrap shrink-0">
                         {EtapaProjetoLabels[projeto.etapa]}
                       </span>
                     </div>
@@ -139,9 +139,9 @@ export function ProjetosListPage() {
                   </div>
 
                   {/* Informações */}
-                  <div className="space-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <span className="text-muted-foreground">Coordenador:</span>
+                  <div className="space-y-2 text-sm min-w-0">
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span className="text-muted-foreground shrink-0">Coordenador:</span>
                       <span className="font-medium truncate">{projeto.coordenador}</span>
                     </div>
                   </div>
@@ -151,15 +151,16 @@ export function ProjetosListPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1"
+                      className="flex-1 min-w-0"
                       onClick={() => navigate(`/projetos/${projeto.id}`)}
                     >
-                      <Eye className="h-4 w-4 mr-2" />
-                      Visualizar
+                      <Eye className="h-4 w-4 mr-1 sm:mr-2 shrink-0" />
+                      <span className="truncate">Visualizar</span>
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="shrink-0"
                       onClick={() => navigate(`/projetos/${projeto.id}/editar`)}
                       title="Editar"
                     >
@@ -168,6 +169,7 @@ export function ProjetosListPage() {
                     <Button
                       variant="ghost"
                       size="icon"
+                      className="shrink-0"
                       onClick={() => handleStatusUpdate(projeto)}
                       title="Atualizar Status"
                     >

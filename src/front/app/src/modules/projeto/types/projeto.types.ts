@@ -149,8 +149,10 @@ export interface AdicionarDocumentoDto {
 export interface DocumentoResponse {
   id: string;
   nomeDocumento: string;
-  dataUpload: string;
+  tipoConteudo: string;
   tamanho: number;
+  dataUpload: string;
+  usuarioUpload: string;
 }
 
 export interface ProjetoResponse {

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, Save, Loader2, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Plus, Trash2, Upload, FileText } from "lucide-react";
 import {
   Button,
   Card,
@@ -17,6 +17,7 @@ import {
 import { useProjeto } from "../hooks/useProjeto";
 import { useProjetoMutations } from "../hooks/useProjetoMutations";
 import { AdicionarSubprojetoModal } from "../components/AdicionarSubprojetoModal";
+import { DocumentUpload } from "../components/DocumentUpload";
 import type { SubprojetoDto } from "../types/projeto.types";
 
 // Schema de validação com Zod
@@ -43,9 +44,10 @@ export function EditarProjetoPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { projeto, loading: loadingProjeto, error } = useProjeto(id);
-  const { atualizarProjeto, loading: saving } = useProjetoMutations();
+  const { atualizarProjeto, adicionarDocumento, loading: saving } = useProjetoMutations();
   const [subprojetos, setSubprojetos] = useState<SubprojetoDto[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [showDocumentUpload, setShowDocumentUpload] = useState(false);
 
   const form = useForm({
     resolver: zodResolver(projetoSchema),
@@ -82,6 +84,22 @@ export function EditarProjetoPage() {
 
   const handleRemoveSubprojeto = (index: number) => {
     setSubprojetos(subprojetos.filter((_, i) => i !== index));
+  };
+
+  const handleDocumentUpload = async (fileName: string, base64Content: string) => {
+    if (!id) return;
+    
+    try {
+      await adicionarDocumento(id, {
+        nomeDocumento: fileName,
+        conteudoBase64: base64Content,
+      });
+      setShowDocumentUpload(false);
+      // Refresh projeto data to show new document
+      window.location.reload();
+    } catch (err) {
+      console.error("Erro ao fazer upload:", err);
+    }
   };
 
   const handleSubmit = async (data: ProjetoFormData) => {
@@ -354,6 +372,55 @@ export function EditarProjetoPage() {
                           >
                             <Trash2 className="h-4 w-4 text-destructive" />
                           </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Card 6: Documentos */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex items-center justify-between flex-wrap gap-2">
+                <h2 className="text-xl font-semibold">Documentos</h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowDocumentUpload(!showDocumentUpload)}
+                >
+                  <Upload className="h-4 w-4" />
+                  {showDocumentUpload ? "Cancelar" : "Adicionar Documento"}
+                </Button>
+              </div>
+
+              {showDocumentUpload && (
+                <div className="border rounded-lg p-4">
+                  <DocumentUpload onFileSelect={handleDocumentUpload} />
+                </div>
+              )}
+
+              {!projeto.documentos || projeto.documentos.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum documento anexado
+                </p>
+              ) : (
+                <div className="space-y-2">
+                  {projeto.documentos.map((doc) => (
+                    <Card key={doc.id}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-center gap-3">
+                          <FileText className="h-5 w-5 text-muted-foreground" />
+                          <div className="flex-1">
+                            <p className="text-sm font-medium">{doc.nomeDocumento}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {new Date(doc.dataUpload).toLocaleDateString("pt-BR")} •{" "}
+                              {(doc.tamanho / 1024).toFixed(2)} KB
+                            </p>
+                          </div>
                         </div>
                       </CardContent>
                     </Card>
