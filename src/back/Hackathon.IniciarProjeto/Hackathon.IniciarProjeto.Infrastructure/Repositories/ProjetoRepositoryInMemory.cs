@@ -33,6 +33,13 @@ public class ProjetoRepositoryInMemory : IProjetoRepository
         return await Task.FromResult(projeto);
     }
 
+    public async Task<List<Projeto>> ObterTodosAsync()
+    {
+        _logger.LogInformation("Obtendo todos os projetos do repositório. Total: {TotalProjetos}", _projetos.Count);
+        
+        return await Task.FromResult(_projetos.Values.ToList());
+    }
+
     public async Task AtualizarAsync(Projeto projeto)
     {
         _logger.LogInformation("Atualizando projeto no repositório: {ProjetoId}", projeto.Id);
