@@ -105,10 +105,10 @@ public class EventoSeedService
         await _eventoRepository.AdicionarAsync(evento4);
 
         // Criar matrículas para o aluno ID: 1
-        await CriarMatriculasParaAluno("1", evento1, evento2, evento3, evento4, dataBase);
+        await CriarMatriculasParaAluno("1", evento1, evento2, evento3, dataBase);
     }
 
-    private async Task CriarMatriculasParaAluno(string codigoAluno, Evento evento1, Evento evento2, Evento evento3, Evento evento4, DateTime dataBase)
+    private async Task CriarMatriculasParaAluno(string codigoAluno, Evento evento1, Evento evento2, Evento evento3, DateTime dataBase)
     {
         // Matrícula 1: Workshop .NET 8 - Confirmada
         var matricula1 = new Matricula
@@ -143,21 +143,9 @@ public class EventoSeedService
             DataMatricula = dataBase.AddDays(-5)
         };
 
-        // Matrícula 4: DevOps - Cancelada
-        var matricula4 = new Matricula
-        {
-            Id = Guid.NewGuid(),
-            CodigoAluno = codigoAluno,
-            EventoId = evento4.Id,
-            Status = StatusMatricula.Cancelada,
-            TipoPagamento = TipoPagamento.Boleto,
-            DataMatricula = dataBase.AddDays(-10)
-        };
-
         // Adicionar matrículas ao repositório
         await _matriculaRepository.AdicionarAsync(matricula1);
         await _matriculaRepository.AdicionarAsync(matricula2);
         await _matriculaRepository.AdicionarAsync(matricula3);
-        await _matriculaRepository.AdicionarAsync(matricula4);
     }
 }
