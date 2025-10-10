@@ -1,0 +1,64 @@
+# Usar a imagem oficial do .NET 8 SDK para build
+FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
+WORKDIR /src
+
+# Copiar arquivos de projeto e restaurar dependências
+COPY ["Hackathon.InscricaoEvento.Api/Hackathon.InscricaoEvento.Api.csproj", "Hackathon.InscricaoEvento.Api/"]
+COPY ["Hackathon.InscricaoEvento.Application/Hackathon.InscricaoEvento.Application.csproj", "Hackathon.InscricaoEvento.Application/"]
+COPY ["Hackathon.InscricaoEvento.Domain/Hackathon.InscricaoEvento.Domain.csproj", "Hackathon.InscricaoEvento.Domain/"]
+COPY ["Hackathon.InscricaoEvento.Infrastructure/Hackathon.InscricaoEvento.Infrastructure.csproj", "Hackathon.InscricaoEvento.Infrastructure/"]
+
+RUN dotnet restore "Hackathon.InscricaoEvento.Api/Hackathon.InscricaoEvento.Api.csproj"
+
+# Copiar todo o código fonte
+COPY . .
+
+# Build da aplicação
+WORKDIR "/src/Hackathon.InscricaoEvento.Api"
+RUN dotnet build "Hackathon.InscricaoEvento.Api.csproj" -c Release -o /app/build
+
+# Publicar a aplicação
+RUN dotnet publish "Hackathon.InscricaoEvento.Api.csproj" -c Release -o /app/publish /p:UseAppHost=false
+
+# Usar a imagem runtime do .NET 8 para execução
+FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
+WORKDIR /app
+
+# Instalar certificados SSL, curl para health check e configurar timezone
+RUN apt-get update && apt-get install -y \
+    ca-certificates \
+    curl \
+    tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+# Configurar timezone para São Paulo
+ENV TZ=America/Sao_Paulo
+
+# Criar usuário não-root para segurança
+RUN addgroup --system --gid 1001 appgroup \
+    && adduser --system --uid 1001 --gid 1001 --no-create-home appuser
+
+# Copiar arquivos publicados
+COPY --from=build /app/publish .
+
+# Alterar proprietário dos arquivos
+RUN chown -R appuser:appgroup /app
+
+# Mudar para usuário não-root
+USER appuser
+
+# Configurar variáveis de ambiente
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV ASPNETCORE_URLS=http://+:8080
+ENV DOTNET_RUNNING_IN_CONTAINER=true
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
+
+# Expor porta
+EXPOSE 8080
+
+# Configurar health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Comando de inicialização
+ENTRYPOINT ["dotnet", "Hackathon.InscricaoEvento.Api.dll"]
