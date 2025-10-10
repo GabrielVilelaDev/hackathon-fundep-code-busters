@@ -3,25 +3,29 @@ import userEvent from "@testing-library/user-event";
 import { Home, Settings, User } from "lucide-react";
 import { describe, expect, it, vi } from "vitest";
 
-import { Sidebar, type MenuOptionsProps } from "../SideBar";
+import { Sidebar, type MenuGroupProps } from "../SideBar";
 
 describe("Sidebar", () => {
-  const mockMenuOptions: MenuOptionsProps[] = [
+  const mockMenuOptions: MenuGroupProps[] = [
     {
-      label: "Home",
-      icon: Home,
-      onClick: vi.fn()
-    },
-    {
-      label: "Profile",
-      icon: User,
-      onClick: vi.fn()
-    },
-    {
-      label: "Settings",
-      icon: Settings,
-      onClick: vi.fn(),
-      disabled: true
+      items: [
+        {
+          label: "Home",
+          icon: Home,
+          onClick: vi.fn()
+        },
+        {
+          label: "Profile",
+          icon: User,
+          onClick: vi.fn()
+        },
+        {
+          label: "Settings",
+          icon: Settings,
+          onClick: vi.fn(),
+          disabled: true
+        }
+      ]
     }
   ];
 
@@ -40,7 +44,7 @@ describe("Sidebar", () => {
     const homeButton = screen.getByTitle("Home");
     await user.click(homeButton);
 
-    expect(mockMenuOptions[0].onClick).toHaveBeenCalled();
+    expect(mockMenuOptions[0].items[0].onClick).toHaveBeenCalled();
   });
 
   it("does not call onClick when disabled menu item is clicked", async () => {
@@ -50,7 +54,7 @@ describe("Sidebar", () => {
     const settingsButton = screen.getByTitle("Settings");
     await user.click(settingsButton);
 
-    expect(mockMenuOptions[2].onClick).not.toHaveBeenCalled();
+    expect(mockMenuOptions[0].items[2].onClick).not.toHaveBeenCalled();
   });
 
   it("renders menu items with disabled state", () => {
@@ -98,5 +102,124 @@ describe("Sidebar", () => {
     const svgs = container.querySelectorAll("svg");
     // We expect at least 3 icons + chevron icon = 4
     expect(svgs.length).toBeGreaterThanOrEqual(3);
+  });
+
+  describe("Dropdowns", () => {
+    const mockMenuOptionsWithDropdowns: MenuGroupProps[] = [
+      {
+        title: "Interno",
+        items: [
+          {
+            label: "Home",
+            icon: Home,
+            onClick: vi.fn()
+          },
+          {
+            label: "Profile",
+            icon: User,
+            onClick: vi.fn()
+          }
+        ]
+      },
+      {
+        title: "Externo",
+        items: [
+          {
+            label: "Settings",
+            icon: Settings,
+            onClick: vi.fn()
+          }
+        ]
+      }
+    ];
+
+    it("renders dropdown titles", () => {
+      render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
+
+      expect(screen.getByText("Interno")).toBeInTheDocument();
+      expect(screen.getByText("Externo")).toBeInTheDocument();
+    });
+
+    it("renders all menu items across groups by default (expanded)", () => {
+      render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
+
+      expect(screen.getByTitle("Home")).toBeInTheDocument();
+      expect(screen.getByTitle("Profile")).toBeInTheDocument();
+      expect(screen.getByTitle("Settings")).toBeInTheDocument();
+    });
+
+    it("toggles dropdown group visibility", async () => {
+      const user = userEvent.setup();
+      render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
+
+      // Initially, items should be visible (expanded by default)
+      expect(screen.getByTitle("Home")).toBeInTheDocument();
+      
+      // Find and click the dropdown button for "Interno"
+      const internoButton = screen.getByText("Interno").closest("button");
+      expect(internoButton).toBeInTheDocument();
+      
+      if (internoButton) {
+        await user.click(internoButton);
+        
+        // After clicking, items should be hidden
+        expect(screen.queryByTitle("Home")).not.toBeInTheDocument();
+        expect(screen.queryByTitle("Profile")).not.toBeInTheDocument();
+        
+        // Click again to expand
+        await user.click(internoButton);
+        
+        // Items should be visible again
+        expect(screen.getByTitle("Home")).toBeInTheDocument();
+        expect(screen.getByTitle("Profile")).toBeInTheDocument();
+      }
+    });
+
+    it("renders groups without titles", () => {
+      const optionsWithoutTitles: MenuGroupProps[] = [
+        {
+          items: [
+            {
+              label: "Home",
+              icon: Home,
+              onClick: vi.fn()
+            }
+          ]
+        }
+      ];
+
+      render(<Sidebar MenuOptions={optionsWithoutTitles} />);
+      expect(screen.getByTitle("Home")).toBeInTheDocument();
+    });
+
+    it("renders multiple groups with some having titles and some not", () => {
+      const mixedOptions: MenuGroupProps[] = [
+        {
+          items: [
+            {
+              label: "Home",
+              icon: Home,
+              onClick: vi.fn()
+            }
+          ]
+        },
+        {
+          title: "Settings",
+          items: [
+            {
+              label: "Profile",
+              icon: User,
+              onClick: vi.fn()
+            }
+          ]
+        }
+      ];
+
+      render(<Sidebar MenuOptions={mixedOptions} />);
+      
+      expect(screen.getByTitle("Home")).toBeInTheDocument();
+      expect(screen.getByTitle("Profile")).toBeInTheDocument();
+      expect(screen.getByText("Settings")).toBeInTheDocument();
+    });
   });
 });

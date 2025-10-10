@@ -1,8 +1,10 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { ChevronLeft, ChevronRight, ChevronDown } from "lucide-react";
 import { useState } from "react";
+import React from "react";
 
 export interface MenuOptionsProps {
   label: string;
@@ -11,15 +13,30 @@ export interface MenuOptionsProps {
   disabled?: boolean;
 }
 
+export interface MenuGroupProps {
+  title?: string;
+  items: MenuOptionsProps[];
+}
+
 export function Sidebar({
   MenuOptions,
 }: {
-  MenuOptions: MenuOptionsProps[];
+  MenuOptions: MenuGroupProps[];
 }) {
   const [isCollapsed, setIsCollapsed] = useState(false);
+  const [expandedGroups, setExpandedGroups] = useState<Record<number, boolean>>(
+    Object.fromEntries(MenuOptions.map((_, index) => [index, true]))
+  );
 
   const toggleSidebar = () => {
     setIsCollapsed(!isCollapsed);
+  };
+
+  const toggleGroup = (groupIndex: number) => {
+    setExpandedGroups(prev => ({
+      ...prev,
+      [groupIndex]: !prev[groupIndex]
+    }));
   };
 
   return (
@@ -44,57 +61,116 @@ export function Sidebar({
       <div className="flex flex-col h-full">
         <div className="flex-1 h-full p-3 md:p-4 pt-6">
           <nav className="space-y-1">
-            {MenuOptions.map((menu, index) => (
-              <Button
-                key={index}
-                className={`
-                  w-full group relative transition-all duration-200
-                  ${isCollapsed
-                    ? "justify-center px-2"
-                    : "justify-center md:justify-start px-2 md:px-3"
-                  }
-                  ${menu.disabled
-                    ? "opacity-50 cursor-not-allowed"
-                    : "hover:bg-muted/50"
-                  }
-                `}
-                variant="ghost"
-                onClick={menu.onClick}
-                title={menu.label}
-                disabled={menu.disabled}
-              >
-                {menu.icon && (
-                  <menu.icon
+            {MenuOptions.map((group, groupIndex) => (
+              <div key={groupIndex} className="mb-2">
+                {group.title && (
+                  <Button
+                    variant="ghost"
+                    onClick={() => toggleGroup(groupIndex)}
                     className={`
-                    h-5 w-5 flex-shrink-0 transition-colors
-                    ${menu.disabled
-                        ? "text-muted-foreground"
-                        : "text-muted-foreground group-hover:text-foreground"
+                      w-full mb-1 hover:bg-muted/50 relative group
+                      ${isCollapsed
+                        ? "justify-center px-2"
+                        : "justify-between px-2 md:px-3"
                       }
-                    ${!isCollapsed ? "md:mr-3" : ""}
-                  `}
-                  />
+                    `}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <Label 
+                        className={`
+                          text-xs text-muted-foreground font-semibold uppercase tracking-wider cursor-pointer
+                          ${isCollapsed ? "hidden" : "hidden md:inline"}
+                        `}
+                      >
+                        {group.title}
+                      </Label>
+                      {/* Mobile and collapsed: Show first letter */}
+                      <Label className={`text-xs text-muted-foreground font-semibold uppercase tracking-wider cursor-pointer ${isCollapsed ? "block md:block" : "md:hidden"}`}>
+                        {group.title.charAt(0)}
+                      </Label>
+                      <ChevronDown 
+                        className={`
+                          h-4 w-4 transition-transform duration-200
+                          ${expandedGroups[groupIndex] ? "rotate-180" : ""}
+                          ${isCollapsed ? "hidden" : "hidden md:block"}
+                        `}
+                      />
+                    </div>
+                    
+                    {/* Tooltip on hover for collapsed state (desktop) */}
+                    {isCollapsed && (
+                      <div className="hidden md:block absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                        {group.title}
+                      </div>
+                    )}
+                    
+                    {/* Tooltip on hover (mobile) */}
+                    <div className="md:hidden absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                      {group.title}
+                    </div>
+                  </Button>
                 )}
+                {(!group.title || expandedGroups[groupIndex]) && group.items.map((menu, index) => (
+                  <Button
+                    key={index}
+                    className={`
+                      w-full group relative transition-all duration-200
+                      ${isCollapsed
+                        ? "justify-center px-2"
+                        : "justify-center md:justify-start px-2 md:px-3"
+                      }
+                      ${menu.disabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : "hover:bg-muted/50"
+                      }
+                    `}
+                    variant="ghost"
+                    onClick={menu.onClick}
+                    title={menu.label}
+                    disabled={menu.disabled}
+                  >
+                    {/* Always show icon (mobile and desktop) */}
+                    {menu.icon && (
+                      <menu.icon
+                        className={`
+                        h-5 w-5 flex-shrink-0 transition-colors
+                        ${menu.disabled
+                            ? "text-muted-foreground"
+                            : "text-muted-foreground group-hover:text-foreground"
+                          }
+                        ${!isCollapsed ? "md:mr-3" : ""}
+                      `}
+                      />
+                    )}
 
-                <span
-                  className={`
-                  font-medium transition-all duration-200
-                  ${isCollapsed ? "hidden" : "hidden md:inline"}
-                  ${menu.disabled
-                      ? "text-muted-foreground"
-                      : "group-hover:text-foreground"
-                    }
-                `}
-                >
-                  {menu.label}
-                </span>
+                    {/* Desktop expanded: Show full label */}
+                    <span
+                      className={`
+                      font-medium transition-all duration-200
+                      ${isCollapsed ? "hidden" : "hidden md:inline"}
+                      ${menu.disabled
+                          ? "text-muted-foreground"
+                          : "group-hover:text-foreground"
+                        }
+                    `}
+                    >
+                      {menu.label}
+                    </span>
 
-                {isCollapsed && (
-                  <div className="absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
-                    {menu.label}
-                  </div>
-                )}
-              </Button>
+                    {/* Tooltip on hover for collapsed state (desktop) */}
+                    {isCollapsed && (
+                      <div className="hidden md:block absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                        {menu.label}
+                      </div>
+                    )}
+
+                    {/* Tooltip on hover (mobile) */}
+                    <div className="md:hidden absolute left-full ml-2 px-2 py-1 bg-popover text-popover-foreground text-sm rounded-md shadow-md opacity-0 pointer-events-none group-hover:opacity-100 transition-opacity whitespace-nowrap z-50">
+                      {menu.label}
+                    </div>
+                  </Button>
+                ))}
+              </div>
             ))}
           </nav>
         </div>
