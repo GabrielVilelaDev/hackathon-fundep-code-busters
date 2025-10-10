@@ -80,7 +80,7 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/dashboard" replace />,
+        element: <Navigate to="/projetos" replace />,
       },
       {
         path: "dashboard",

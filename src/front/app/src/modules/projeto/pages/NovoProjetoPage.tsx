@@ -1,38 +1,124 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { ArrowLeft, ArrowRight, Save, Loader2 } from "lucide-react";
+import {
+  Button,
+  Card,
+  CardContent,
+  InputForm,
+  InputSelectForm,
+  Form,
+  TextareaForm,
+  DataPicker,
+} from "@design-system";
 import {
   TipoOrcamento,
   TipoAplicacaoPermitida,
   type ImportarProjetoDto,
-  type SubprojetoDto,
 } from "../types/projeto.types";
 import { useProjetoMutations } from "../hooks/useProjetoMutations";
+
+// Schema de validação com Zod
+const projetoSchema = z.object({
+  // Step 1 - Informações Básicas
+  codigoProjeto: z.string().min(1, "Código do projeto é obrigatório"),
+  centroCusto: z.string().min(1, "Centro de custo é obrigatório"),
+  referenciaFundep: z.string().min(1, "Referência FUNDEP é obrigatória"),
+  titulo: z.string().min(1, "Título é obrigatório"),
+  resumo: z.string().min(1, "Resumo é obrigatório"),
+  objeto: z.string().min(1, "Objeto é obrigatório"),
+
+  // Step 2 - Responsáveis e Instituições
+  coordenador: z.string().min(1, "Coordenador é obrigatório"),
+  executor: z.string().min(1, "Executor é obrigatório"),
+  coExecutor: z.string().optional(),
+  referenciaExecutor: z.string().min(1, "Referência executor é obrigatória"),
+  financiador: z.string().min(1, "Financiador é obrigatório"),
+  coFinanciador: z.string().optional(),
+  origemRecurso: z.string().min(1, "Origem do recurso é obrigatória"),
+  referenciaFinanciador: z.string().min(1, "Referência financiador é obrigatória"),
+
+  // Step 3 - Informações Financeiras
+  valor: z.number().min(0, "Valor deve ser maior ou igual a zero"),
+  moeda: z.string().min(1, "Moeda é obrigatória"),
+  amf: z.number().min(0, "AMF deve ser maior ou igual a zero"),
+  tipoOrcamento: z.string().min(1, "Tipo de orçamento é obrigatório"),
+  conta: z.string().min(1, "Conta é obrigatória"),
+  banco: z.string().min(1, "Banco é obrigatório"),
+  agencia: z.string().min(1, "Agência é obrigatória"),
+  contaBancaria: z.string().min(1, "Conta bancária é obrigatória"),
+  custoAdministrativo: z.string().min(1, "Custo administrativo é obrigatório"),
+
+  // Step 4 - Prazos e Datas
+  dataImplantacao: z.date({ message: "Data de implantação é obrigatória" }),
+  dataAssinatura: z.date({ message: "Data de assinatura é obrigatória" }),
+  inicioPrevisto: z.date({ message: "Início previsto é obrigatório" }),
+  terminoPrevisto: z.date({ message: "Término previsto é obrigatório" }),
+  dataLimiteDespesas: z.date().optional(),
+  cronogramaLiberacao: z.string().min(1, "Cronograma de liberação é obrigatório"),
+  bloqueiosMovimentacoes: z.string().min(1, "Bloqueios e movimentações é obrigatório"),
+  moedaParaOrcar: z.string().min(1, "Moeda para orçar é obrigatória"),
+  saldoAdiantamento: z.number().min(0, "Saldo adiantamento deve ser maior ou igual a zero"),
+  implantacaoProvisoria: z.boolean(),
+
+  // Campos adicionais
+  tipoAplicacaoPermitida: z.number(),
+  coordenadorAcessaInternet: z.boolean(),
+  razaoMultiplo: z.boolean(),
+  absorcaoTarifaFundep: z.boolean(),
+  mostrarOrcamentoMesmoSemLiberacao045: z.boolean(),
+  subprojetos: z.array(z.any()),
+});
+
+type ProjetoFormData = z.infer<typeof projetoSchema>;
 
 export function NovoProjetoPage() {
   const navigate = useNavigate();
   const { importarProjeto, loading } = useProjetoMutations();
   const [currentStep, setCurrentStep] = useState(1);
-  const [formData, setFormData] = useState<Partial<ImportarProjetoDto>>({
-    tipoOrcamento: TipoOrcamento.Oficial,
-    tipoAplicacaoPermitida: TipoAplicacaoPermitida.AplicacaoLivre,
-    coordenadorAcessaInternet: true,
-    implantacaoProvisoria: false,
-    razaoMultiplo: false,
-    absorcaoTarifaFundep: false,
-    mostrarOrcamentoMesmoSemLiberacao045: false,
-    subprojetos: [],
+
+  const form = useForm<ProjetoFormData>({
+    resolver: zodResolver(projetoSchema),
+    defaultValues: {
+      tipoOrcamento: String(TipoOrcamento.Oficial),
+      tipoAplicacaoPermitida: TipoAplicacaoPermitida.AplicacaoLivre,
+      coordenadorAcessaInternet: true,
+      implantacaoProvisoria: false,
+      razaoMultiplo: false,
+      absorcaoTarifaFundep: false,
+      mostrarOrcamentoMesmoSemLiberacao045: false,
+      subprojetos: [],
+      moeda: "BRL",
+      moedaParaOrcar: "BRL",
+      saldoAdiantamento: 0,
+    },
   });
 
   const totalSteps = 4;
 
-  const updateFormData = (field: string, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSubmit = async () => {
+  const handleSubmit = async (data: ProjetoFormData) => {
     try {
-      const result = await importarProjeto(formData as ImportarProjetoDto);
+      // Formatar datas para string no formato ISO
+      const formatDate = (date: Date | undefined) => {
+        if (!date) return undefined;
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD
+      };
+
+      // Converter tipoOrcamento de string para número e formatar datas
+      const dataToSubmit = {
+        ...data,
+        tipoOrcamento: parseInt(data.tipoOrcamento),
+        dataImplantacao: formatDate(data.dataImplantacao),
+        dataAssinatura: formatDate(data.dataAssinatura),
+        inicioPrevisto: formatDate(data.inicioPrevisto),
+        terminoPrevisto: formatDate(data.terminoPrevisto),
+        dataLimiteDespesas: formatDate(data.dataLimiteDespesas),
+      };
+      
+      const result = await importarProjeto(dataToSubmit as unknown as ImportarProjetoDto);
       navigate(`/projetos/${result.id}`);
     } catch (err) {
       console.error("Erro ao criar projeto:", err);
@@ -47,84 +133,50 @@ export function NovoProjetoPage() {
             <h2 className="text-xl font-semibold">Informações Básicas</h2>
             
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Código do Projeto *
-                </label>
-                <input
-                  type="text"
-                  value={formData.codigoProjeto || ""}
-                  onChange={(e) => updateFormData("codigoProjeto", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="codigoProjeto"
+                label="Código do Projeto"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Centro de Custo *
-                </label>
-                <input
-                  type="text"
-                  value={formData.centroCusto || ""}
-                  onChange={(e) => updateFormData("centroCusto", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="centroCusto"
+                label="Centro de Custo"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Referência FUNDEP *
-                </label>
-                <input
-                  type="text"
-                  value={formData.referenciaFundep || ""}
-                  onChange={(e) => updateFormData("referenciaFundep", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Título do Projeto *
-              </label>
-              <input
-                type="text"
-                value={formData.titulo || ""}
-                onChange={(e) => updateFormData("titulo", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <InputForm
+                name="referenciaFundep"
+                label="Referência FUNDEP"
+                control={form.control}
                 required
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Resumo *
-              </label>
-              <textarea
-                value={formData.resumo || ""}
-                onChange={(e) => updateFormData("resumo", e.target.value)}
-                rows={3}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                required
-              />
-            </div>
+            <InputForm
+              name="titulo"
+              label="Título do Projeto"
+              control={form.control}
+              required
+            />
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Objeto *
-              </label>
-              <textarea
-                value={formData.objeto || ""}
-                onChange={(e) => updateFormData("objeto", e.target.value)}
-                rows={3}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                required
-              />
-            </div>
+            <TextareaForm
+              name="resumo"
+              label="Resumo"
+              control={form.control}
+              required
+              rows={3}
+            />
+
+            <TextareaForm
+              name="objeto"
+              label="Objeto"
+              control={form.control}
+              required
+              rows={3}
+            />
           </div>
         );
 
@@ -134,107 +186,59 @@ export function NovoProjetoPage() {
             <h2 className="text-xl font-semibold">Responsáveis e Instituições</h2>
             
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Coordenador *
-                </label>
-                <input
-                  type="text"
-                  value={formData.coordenador || ""}
-                  onChange={(e) => updateFormData("coordenador", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="coordenador"
+                label="Coordenador"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Executor *
-                </label>
-                <input
-                  type="text"
-                  value={formData.executor || ""}
-                  onChange={(e) => updateFormData("executor", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="executor"
+                label="Executor"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Co-Executor
-                </label>
-                <input
-                  type="text"
-                  value={formData.coExecutor || ""}
-                  onChange={(e) => updateFormData("coExecutor", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
+              <InputForm
+                name="coExecutor"
+                label="Co-Executor"
+                control={form.control}
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Referência Executor *
-                </label>
-                <input
-                  type="text"
-                  value={formData.referenciaExecutor || ""}
-                  onChange={(e) => updateFormData("referenciaExecutor", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="referenciaExecutor"
+                label="Referência Executor"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Financiador *
-                </label>
-                <input
-                  type="text"
-                  value={formData.financiador || ""}
-                  onChange={(e) => updateFormData("financiador", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="financiador"
+                label="Financiador"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Co-Financiador
-                </label>
-                <input
-                  type="text"
-                  value={formData.coFinanciador || ""}
-                  onChange={(e) => updateFormData("coFinanciador", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
+              <InputForm
+                name="coFinanciador"
+                label="Co-Financiador"
+                control={form.control}
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Origem do Recurso *
-                </label>
-                <input
-                  type="text"
-                  value={formData.origemRecurso || ""}
-                  onChange={(e) => updateFormData("origemRecurso", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="origemRecurso"
+                label="Origem do Recurso"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Referência Financiador *
-                </label>
-                <input
-                  type="text"
-                  value={formData.referenciaFinanciador || ""}
-                  onChange={(e) => updateFormData("referenciaFinanciador", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="referenciaFinanciador"
+                label="Referência Financiador"
+                control={form.control}
+                required
+              />
             </div>
           </div>
         );
@@ -245,129 +249,78 @@ export function NovoProjetoPage() {
             <h2 className="text-xl font-semibold">Informações Financeiras</h2>
             
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Valor Total (R$) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.valor || ""}
-                  onChange={(e) => updateFormData("valor", parseFloat(e.target.value))}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="valor"
+                label="Valor Total (R$)"
+                type="number"
+                control={form.control}
+                required
+                step="0.01"
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Moeda *
-                </label>
-                <input
-                  type="text"
-                  value={formData.moeda || "BRL"}
-                  onChange={(e) => updateFormData("moeda", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="moeda"
+                label="Moeda"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  AMF (%) *
-                </label>
-                <input
-                  type="number"
-                  step="0.01"
-                  value={formData.amf || ""}
-                  onChange={(e) => updateFormData("amf", parseFloat(e.target.value))}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="amf"
+                label="AMF (%)"
+                type="number"
+                control={form.control}
+                required
+                step="0.01"
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Tipo de Orçamento *
-                </label>
-                <select
-                  value={formData.tipoOrcamento}
-                  onChange={(e) =>
-                    updateFormData("tipoOrcamento", parseInt(e.target.value))
-                  }
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                >
-                  <option value={TipoOrcamento.Oficial}>Oficial</option>
-                  <option value={TipoOrcamento.Provisorio}>Provisório</option>
-                </select>
-              </div>
+              <InputSelectForm
+                name="tipoOrcamento"
+                label="Tipo de Orçamento"
+                control={form.control}
+                required
+                options={[
+                  { label: "Oficial", value: String(TipoOrcamento.Oficial) },
+                  { label: "Provisório", value: String(TipoOrcamento.Provisorio) },
+                ]}
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Conta *
-                </label>
-                <input
-                  type="text"
-                  value={formData.conta || ""}
-                  onChange={(e) => updateFormData("conta", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="conta"
+                label="Conta"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Banco *
-                </label>
-                <input
-                  type="text"
-                  value={formData.banco || ""}
-                  onChange={(e) => updateFormData("banco", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="banco"
+                label="Banco"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Agência *
-                </label>
-                <input
-                  type="text"
-                  value={formData.agencia || ""}
-                  onChange={(e) => updateFormData("agencia", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
+              <InputForm
+                name="agencia"
+                label="Agência"
+                control={form.control}
+                required
+              />
 
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Conta Bancária *
-                </label>
-                <input
-                  type="text"
-                  value={formData.contaBancaria || ""}
-                  onChange={(e) => updateFormData("contaBancaria", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Custo Administrativo *
-              </label>
-              <textarea
-                value={formData.custoAdministrativo || ""}
-                onChange={(e) => updateFormData("custoAdministrativo", e.target.value)}
-                rows={2}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <InputForm
+                name="contaBancaria"
+                label="Conta Bancária"
+                control={form.control}
                 required
               />
             </div>
+
+            <TextareaForm
+              name="custoAdministrativo"
+              label="Custo Administrativo"
+              control={form.control}
+              required
+              rows={2}
+            />
           </div>
         );
 
@@ -377,139 +330,88 @@ export function NovoProjetoPage() {
             <h2 className="text-xl font-semibold">Prazos e Datas</h2>
             
             <div className="grid gap-4 md:grid-cols-2">
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Data de Implantação *
-                </label>
-                <input
-                  type="date"
-                  value={formData.dataImplantacao || ""}
-                  onChange={(e) => updateFormData("dataImplantacao", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Data de Assinatura *
-                </label>
-                <input
-                  type="date"
-                  value={formData.dataAssinatura || ""}
-                  onChange={(e) => updateFormData("dataAssinatura", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Início Previsto *
-                </label>
-                <input
-                  type="date"
-                  value={formData.inicioPrevisto || ""}
-                  onChange={(e) => updateFormData("inicioPrevisto", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Término Previsto *
-                </label>
-                <input
-                  type="date"
-                  value={formData.terminoPrevisto || ""}
-                  onChange={(e) => updateFormData("terminoPrevisto", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">
-                  Data Limite de Despesas
-                </label>
-                <input
-                  type="date"
-                  value={formData.dataLimiteDespesas || ""}
-                  onChange={(e) => updateFormData("dataLimiteDespesas", e.target.value)}
-                  className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Cronograma de Liberação *
-              </label>
-              <textarea
-                value={formData.cronogramaLiberacao || ""}
-                onChange={(e) => updateFormData("cronogramaLiberacao", e.target.value)}
-                rows={3}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <DataPicker
+                name="dataImplantacao"
+                label="Data de Implantação"
+                control={form.control}
                 required
+                placeholder="Selecione a data"
+              />
+
+              <DataPicker
+                name="dataAssinatura"
+                label="Data de Assinatura"
+                control={form.control}
+                required
+                placeholder="Selecione a data"
+              />
+
+              <DataPicker
+                name="inicioPrevisto"
+                label="Início Previsto"
+                control={form.control}
+                required
+                placeholder="Selecione a data"
+              />
+
+              <DataPicker
+                name="terminoPrevisto"
+                label="Término Previsto"
+                control={form.control}
+                required
+                placeholder="Selecione a data"
+              />
+
+              <DataPicker
+                name="dataLimiteDespesas"
+                label="Data Limite de Despesas"
+                control={form.control}
+                placeholder="Selecione a data"
               />
             </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Bloqueios e Movimentações *
-              </label>
-              <textarea
-                value={formData.bloqueiosMovimentacoes || ""}
-                onChange={(e) => updateFormData("bloqueiosMovimentacoes", e.target.value)}
-                rows={3}
-                className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                required
-              />
-            </div>
+            <TextareaForm
+              name="cronogramaLiberacao"
+              label="Cronograma de Liberação"
+              control={form.control}
+              required
+              rows={3}
+            />
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Moeda para Orçar *
-              </label>
-              <input
-                type="text"
-                value={formData.moedaParaOrcar || "BRL"}
-                onChange={(e) => updateFormData("moedaParaOrcar", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                required
-              />
-            </div>
+            <TextareaForm
+              name="bloqueiosMovimentacoes"
+              label="Bloqueios e Movimentações"
+              control={form.control}
+              required
+              rows={3}
+            />
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Saldo Adiantamento *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.saldoAdiantamento || 0}
-                onChange={(e) =>
-                  updateFormData("saldoAdiantamento", parseFloat(e.target.value))
-                }
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                required
-              />
-            </div>
+            <InputForm
+              name="moedaParaOrcar"
+              label="Moeda para Orçar"
+              control={form.control}
+              required
+            />
+
+            <InputForm
+              name="saldoAdiantamento"
+              label="Saldo Adiantamento"
+              type="number"
+              control={form.control}
+              required
+              step="0.01"
+            />
 
             <div className="flex items-center gap-2">
               <input
                 type="checkbox"
                 id="implantacao-provisoria"
-                checked={formData.implantacaoProvisoria || false}
-                onChange={(e) =>
-                  updateFormData("implantacaoProvisoria", e.target.checked)
-                }
+                {...form.register("implantacaoProvisoria")}
                 className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-ring"
               />
               <label
                 htmlFor="implantacao-provisoria"
-                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                className="text-sm font-medium cursor-pointer"
               >
                 Implantação Provisória
               </label>
@@ -526,13 +428,14 @@ export function NovoProjetoPage() {
     <div className="container mx-auto py-6 px-4 space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate("/projetos")}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2"
+          className="mb-2 -ml-3"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar
-        </button>
+        </Button>
         <h1 className="text-3xl font-bold tracking-tight">Novo Projeto</h1>
         <p className="text-muted-foreground">
           Importar novo projeto para o sistema
@@ -567,48 +470,54 @@ export function NovoProjetoPage() {
         ))}
       </div>
 
-      {/* Form */}
-      <div className="rounded-lg border p-6">{renderStep()}</div>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          {/* Form */}
+          <Card>
+            <CardContent className="pt-6">{renderStep()}</CardContent>
+          </Card>
 
-      {/* Navigation */}
-      <div className="flex justify-between">
-        <button
-          onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
-          disabled={currentStep === 1}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 disabled:pointer-events-none disabled:opacity-50"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Anterior
-        </button>
+          {/* Navigation */}
+          <div className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
+              disabled={currentStep === 1}
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Anterior
+            </Button>
 
-        {currentStep < totalSteps ? (
-          <button
-            onClick={() => setCurrentStep((prev) => Math.min(totalSteps, prev + 1))}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2"
-          >
-            Próximo
-            <ArrowRight className="h-4 w-4" />
-          </button>
-        ) : (
-          <button
-            onClick={handleSubmit}
-            disabled={loading}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2 disabled:pointer-events-none disabled:opacity-50"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Salvando...
-              </>
+            {currentStep < totalSteps ? (
+              <Button
+                type="button"
+                onClick={() => setCurrentStep((prev) => Math.min(totalSteps, prev + 1))}
+              >
+                Próximo
+                <ArrowRight className="h-4 w-4" />
+              </Button>
             ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Criar Projeto
-              </>
+              <Button
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Salvando...
+                  </>
+                ) : (
+                  <>
+                    <Save className="h-4 w-4" />
+                    Criar Projeto
+                  </>
+                )}
+              </Button>
             )}
-          </button>
-        )}
-      </div>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 }

@@ -11,13 +11,13 @@ export default function RootLayout() {
       <Header />
       <div className="flex flex-1 overflow-hidden">
         <Sidebar MenuOptions={[
-          {
-            label: "Dashboard",
-            icon: LayoutDashboard,
-            onClick: () => {
-              navigate("/");
-            },
-          },
+          // {
+          //   label: "Dashboard",
+          //   icon: LayoutDashboard,
+          //   onClick: () => {
+          //     navigate("/");
+          //   },
+          // },
           {
             label: "Projetos",
             icon: FolderKanban,
