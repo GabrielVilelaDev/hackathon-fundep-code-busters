@@ -25,12 +25,13 @@ builder.Services.AddScoped<AtualizarStatusHandler>();
 builder.Services.AddScoped<AtualizarProjetoHandler>();
 builder.Services.AddScoped<AdicionarDocumentoHandler>();
 builder.Services.AddScoped<ObterProjetoHandler>();
+builder.Services.AddScoped<ListarProjetosHandler>();
 
-// Registrar reposit�rios
+// Registrar repositórios
 builder.Services.AddSingleton<IProjetoRepository, ProjetoRepositoryInMemory>();
 builder.Services.AddSingleton<IRubricaRepository, RubricaRepositoryInMemory>();
 
-// Registrar servi�os de infraestrutura
+// Registrar serviços de infraestrutura
 builder.Services.AddScoped<IEmailService, EmailServiceSimulado>();
 builder.Services.AddScoped<IEventPublisher, LocalEventPublisher>();
 
@@ -39,17 +40,56 @@ builder.Services.AddScoped<IEventHandler<ProjetoCadastradoEvent>, EnviarEmailCoo
 builder.Services.AddScoped<IEventHandler<ProjetoStatusAtualizadoEvent>, LogarStatusAtualizadoHandler>();
 builder.Services.AddScoped<IEventHandler<ProjetoAtualizadoEvent>, LogarProjetoAtualizadoHandler>();
 builder.Services.AddScoped<IEventHandler<DocumentoAdicionadoEvent>, LogarDocumentoAdicionadoHandler>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin() // Permite qualquer origem
+                  .AllowAnyMethod()   // Permite qualquer método HTTP (GET, POST, etc.)
+                  .AllowAnyHeader();  // Permite qualquer cabeçalho na requisição
+        });
+});
+
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin() // Allows requests from any origin
+              .AllowAnyHeader()  // Allows any HTTP header
+              .AllowAnyMethod(); // Allows any HTTP method (GET, POST, PUT, DELETE, etc.)
+    });
+});
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+// Habilitar Swagger em Development ou quando ENABLE_SWAGGER=true
+if (app.Environment.IsDevelopment() || 
+    app.Configuration.GetValue<bool>("ENABLE_SWAGGER", false))
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Hackathon.IniciarProjeto.Api v1");
+        c.RoutePrefix = "swagger";
+    });
 }
 
+app.UseCors("AllowAll");
+
 app.UseHttpsRedirection();
+
+// Endpoint de saúde para health check
+app.MapGet("/health", () => Results.Ok(new
+{
+    Status = "Healthy",
+    Timestamp = DateTime.UtcNow,
+    Service = "Hackathon.IniciarProjeto.Api"
+}))
+.WithName("Health")
+.WithTags("Health");
 
 // Endpoints da API
 app.MapPost("/projetos", async (
@@ -66,7 +106,15 @@ app.MapPost("/projetos", async (
     var projetoId = await handler.ExecutarAsync(dto);
     return Results.Created($"/projetos/{projetoId}", new { Id = projetoId });
 })
-.WithName("ImportarProjeto")
+.WithName("CadastrarProjeto")
+.WithTags("Projetos");
+
+app.MapGet("/projetos", async (ListarProjetosHandler handler) =>
+{
+    var projetos = await handler.ExecutarAsync();
+    return Results.Ok(projetos);
+})
+.WithName("ListarProjetos")
 .WithTags("Projetos");
 
 app.MapGet("/projetos/{id:guid}", async (
@@ -118,6 +166,7 @@ app.MapPost("/projetos/{id:guid}/documentos", async (
 })
 .WithName("AdicionarDocumento")
 .WithTags("Projetos");
+
 // Endpoint para listar todas as rubricas
 app.MapGet("/rubricas", async (IRubricaRepository rubricaRepository) =>
 {

@@ -1,29 +1,62 @@
-import { createBrowserRouter, Navigate } from 'react-router-dom'
-import { lazy, Suspense } from 'react'
-import { LoadingSpinner } from '@design-system'
+import { createBrowserRouter, Navigate } from "react-router-dom";
+import { lazy, Suspense } from "react";
+import { LoadingSpinner } from "@design-system";
 
-const RootLayout = lazy(() => import('@/shared/components/layout/RootLayout'))
-const AuthLayout = lazy(() => import('@/shared/components/layout/AuthLayout'))
+const RootLayout = lazy(
+  () => import("@/shared/components/templates/RootLayout")
+);
+const AuthLayout = lazy(
+  () => import("@/shared/components/templates/AuthLayout")
+);
 
-const LoginPage = lazy(() => import('@/modules/auth/pages/LoginPage'))
+const LoginPage = lazy(() => import("@/modules/auth/pages/LoginPage"));
 
-const DashboardPage = lazy(() => import('@/modules/prospeccao/pages/DashboardPage'))
-const AprovacoesPage = lazy(() => import('@/modules/prospeccao/pages/AprovacoesPage'))
-const RelatoriosPage = lazy(() => import('@/modules/prospeccao/pages/RelatoriosPage'))
-const ConfiguracoesPage = lazy(() => import('@/modules/prospeccao/pages/ConfiguracoesPage'))
-const ProspeccaoDashboard = lazy(() => import('@/modules/prospeccao/pages/Dashboard'))
-const PropostasListPage = lazy(() => import('@/modules/prospeccao/pages/PropostasListPage'))
-const PropostaDetailPage = lazy(() => import('@/modules/prospeccao/pages/PropostaDetailPage'))
-const NovaPropostaPage = lazy(() => import('@/modules/prospeccao/pages/NovaPropostaPage'))
+const DashboardPage = lazy(
+  () => import("@/modules/prospeccao/pages/DashboardPage")
+);
+const AprovacoesPage = lazy(
+  () => import("@/modules/prospeccao/pages/AprovacoesPage")
+);
+const RelatoriosPage = lazy(
+  () => import("@/modules/prospeccao/pages/RelatoriosPage")
+);
+const ConfiguracoesPage = lazy(
+  () => import("@/modules/prospeccao/pages/ConfiguracoesPage")
+);
+const ProspeccaoDashboard = lazy(
+  () => import("@/modules/prospeccao/pages/Dashboard")
+);
+const PropostasListPage = lazy(
+  () => import("@/modules/prospeccao/pages/PropostasListPage")
+);
+const PropostaDetailPage = lazy(
+  () => import("@/modules/prospeccao/pages/PropostaDetailPage")
+);
+const NovaPropostaPage = lazy(
+  () => import("@/modules/prospeccao/pages/NovaPropostaPage")
+);
 
+// Projeto Pages
+const ProjetosListPage = lazy(
+  () => import("@/modules/projeto/pages/ProjetosListPage")
+);
+const NovoProjetoPage = lazy(
+  () => import("@/modules/projeto/pages/NovoProjetoPage")
+);
+const ProjetoDetailPage = lazy(
+  () => import("@/modules/projeto/pages/ProjetoDetailPage")
+);
+const EditarProjetoPage = lazy(
+  () => import("@/modules/projeto/pages/EditarProjetoPage")
+);
 
 const LazyRoute = ({ children }: { children: React.ReactNode }) => {
-  return <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>
-}
+  return <Suspense fallback={<LoadingSpinner fullScreen />}>{children}</Suspense>;
+};
 
 export const router = createBrowserRouter([
   {
-    path: '/login',
+    path: "/login",
     element: (
       <LazyRoute>
         <AuthLayout />
@@ -38,7 +71,7 @@ export const router = createBrowserRouter([
   },
 
   {
-    path: '/',
+    path: "/",
     element: (
       <LazyRoute>
         <RootLayout />
@@ -47,47 +80,68 @@ export const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <Navigate to="/dashboard" replace />,
+        element: <Navigate to="/projetos" replace />,
       },
       {
-        path: 'dashboard',
+        path: "dashboard",
         element: <DashboardPage />,
       },
       {
-        path: 'aprovacoes',
+        path: "aprovacoes",
         element: <AprovacoesPage />,
       },
       {
-        path: 'relatorios',
+        path: "relatorios",
         element: <RelatoriosPage />,
       },
       {
-        path: 'configuracoes',
+        path: "configuracoes",
         element: <ConfiguracoesPage />,
       },
       {
-        path: 'prospeccao',
+        path: "prospeccao",
         children: [
           {
             index: true,
             element: <ProspeccaoDashboard />,
           },
           {
-            path: 'propostas',
+            path: "propostas",
             children: [
               {
                 index: true,
                 element: <PropostasListPage />,
               },
               {
-                path: 'nova',
+                path: "nova",
                 element: <NovaPropostaPage />,
               },
               {
-                path: ':id',
+                path: ":id",
                 element: <PropostaDetailPage />,
               },
             ],
+          },
+        ],
+      },
+      {
+        path: "projetos",
+        children: [
+          {
+            index: true,
+            element: <ProjetosListPage />,
+          },
+          {
+            path: "novo",
+            element: <NovoProjetoPage />,
+          },
+          {
+            path: ":id",
+            element: <ProjetoDetailPage />,
+          },
+          {
+            path: ":id/editar",
+            element: <EditarProjetoPage />,
           },
         ],
       },
@@ -95,7 +149,7 @@ export const router = createBrowserRouter([
   },
 
   {
-    path: '*',
+    path: "*",
     element: (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -105,4 +159,4 @@ export const router = createBrowserRouter([
       </div>
     ),
   },
-])
+]);

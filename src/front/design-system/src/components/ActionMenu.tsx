@@ -35,13 +35,17 @@ export function ActionMenu({ menu, trigger }: ActionMenuProps) {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <div className="group">
-          {trigger ? (
-            trigger
-          ) : (
-            <Menu className="cursor-pointer text-primary-foreground" />
-          )}
-        </div>
+        {trigger ? (
+          trigger
+        ) : (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-primary-foreground hover:bg-primary/10"
+          >
+            <Menu className="h-4 w-4 text-foreground" />
+          </Button>
+        )}
       </PopoverTrigger>
       <PopoverContent
         className="w-60"

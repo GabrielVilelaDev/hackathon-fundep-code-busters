@@ -123,10 +123,6 @@ secrets.json
 *.bak
 
 # Docker
-docker-compose.override.yml
-**/docker-compose*.yml
-**/Dockerfile.*
-**/.docker/
 **/bin/
 **/obj/
 

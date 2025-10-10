@@ -14,7 +14,7 @@ export function Header() {
       title: "Configurations",
       actions: [
         {
-          label: isDarkMode ? "LightMode" : "DarkMode",
+          label: isDarkMode ? "Modo Claro" : "Modo Escuro",
           icon: isDarkMode ? (
             <Sun className="h-4 w-4" />
           ) : (
@@ -25,10 +25,10 @@ export function Header() {
       ],
     },
     {
-      title: "Logout",
+      title: "Sair",
       actions: [
         {
-          label: "Logout",
+          label: "Sair",
           icon: <LogOut className="h-4 w-4" />,
           onClick: () => {
             navigate("/login")
@@ -45,11 +45,11 @@ export function Header() {
           <div className="flex items-center space-x-2">
             <div className="w-8 h-8 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center">
               <span className="text-primary font-bold text-sm">
-                H
+                G
               </span>
             </div>
             <h1 className="text-xl font-semibold text-foreground">
-              Hackathon
+              GPF 2.0
             </h1>
           </div>
         </div>

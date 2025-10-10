@@ -3,21 +3,19 @@ import { CalendarIcon, ChevronDownIcon } from "lucide-react";
 import type { Control, FieldValues, Path } from "react-hook-form";
 
 import {
-  FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage
 } from "./ui/form";
-import { Button } from "@/components/ui/button";
-import { Calendar } from "@/components/ui/calendar";
+import { Calendar } from "./ui/calendar";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger
-} from "@/components/ui/popover";
-import { cn } from "@/lib/utils";
-import type { FormFieldProps } from "@/types";
+} from "./ui/popover";
+import { cn } from "../lib/utils";
+import type { FormFieldProps } from "../types";
 
 export interface DataPickerProps<T extends FieldValues = FieldValues>
   extends FormFieldProps {
@@ -74,28 +72,29 @@ export const DataPicker = <T extends FieldValues = FieldValues>({
             )}
             <Popover open={open} onOpenChange={setOpen}>
               <PopoverTrigger asChild>
-                <FormControl>
-                  <Button
-                    id={id}
-                    variant="outline"
-                    disabled={disabled}
-                    className={cn(
-                      "w-full justify-between font-normal",
-                      !field.value && "text-muted-foreground",
-                      fieldState.error && "border-destructive",
-                      className
-                    )}
-                    aria-expanded={open}
-                    aria-haspopup="dialog"
-                    aria-invalid={!!fieldState.error}
-                  >
-                    <span className="flex items-center gap-2">
-                      <CalendarIcon className="h-4 w-4" />
-                      {formatDate(field.value)}
-                    </span>
-                    <ChevronDownIcon className="h-4 w-4" />
-                  </Button>
-                </FormControl>
+                <button
+                  type="button"
+                  id={id}
+                  disabled={disabled}
+                  className={cn(
+                    "inline-flex h-9 w-full items-center justify-between gap-2 whitespace-nowrap rounded-md border bg-background px-4 py-2 text-sm font-medium shadow-xs transition-all outline-none",
+                    "hover:bg-accent hover:text-accent-foreground dark:bg-input/30 dark:border-input dark:hover:bg-input/50",
+                    "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
+                    "disabled:pointer-events-none disabled:opacity-50",
+                    "cursor-pointer",
+                    !field.value && "text-muted-foreground font-normal",
+                    fieldState.error && "border-destructive aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40",
+                  )}
+                  aria-expanded={open}
+                  aria-haspopup="dialog"
+                  aria-invalid={!!fieldState.error}
+                >
+                  <span className="flex items-center gap-2">
+                    <CalendarIcon className="h-4 w-4" />
+                    {formatDate(field.value)}
+                  </span>
+                  <ChevronDownIcon className="h-4 w-4 shrink-0" />
+                </button>
               </PopoverTrigger>
               <PopoverContent
                 className="w-auto overflow-hidden p-0"
