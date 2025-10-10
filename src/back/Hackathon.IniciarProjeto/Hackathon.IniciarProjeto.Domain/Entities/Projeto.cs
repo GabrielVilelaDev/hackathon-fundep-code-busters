@@ -54,4 +54,5 @@ public class Projeto
     public DateTime DataCriacao { get; set; }
     
     public List<Subprojeto> Subprojetos { get; set; } = new();
+    public List<Documento> Documentos { get; set; } = new();
 }

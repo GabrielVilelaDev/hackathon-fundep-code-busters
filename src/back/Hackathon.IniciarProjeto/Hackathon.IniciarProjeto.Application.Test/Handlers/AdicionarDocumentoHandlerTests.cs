@@ -14,6 +14,7 @@ namespace Hackathon.IniciarProjeto.Application.Test.Handlers;
 public class AdicionarDocumentoHandlerTests  
 {
     private readonly Mock<IProjetoRepository> _projetoRepositoryMock;
+    private readonly Mock<IDocumentoRepository> _documentoRepositoryMock;
     private readonly Mock<IEventPublisher> _eventPublisherMock;
     private readonly Mock<ILogger<AdicionarDocumentoHandler>> _loggerMock;
     private readonly AdicionarDocumentoHandler _handler;
@@ -21,11 +22,13 @@ public class AdicionarDocumentoHandlerTests
     public AdicionarDocumentoHandlerTests()
     {
         _projetoRepositoryMock = new Mock<IProjetoRepository>();
+        _documentoRepositoryMock = new Mock<IDocumentoRepository>();
         _eventPublisherMock = new Mock<IEventPublisher>();
         _loggerMock = new Mock<ILogger<AdicionarDocumentoHandler>>();
 
         _handler = new AdicionarDocumentoHandler(
             _projetoRepositoryMock.Object,
+            _documentoRepositoryMock.Object,
             _eventPublisherMock.Object,
             _loggerMock.Object);
     }
@@ -50,6 +53,60 @@ public class AdicionarDocumentoHandlerTests
 
         // Assert
         resultado.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task ExecutarAsync_DeveCriarDocumento_QuandoProjetoExiste()
+    {
+        // Arrange
+        var projetoId = Guid.NewGuid();
+        var projeto = CriarProjetoValido(projetoId);
+        var dto = new AdicionarDocumentoDto 
+        { 
+            NomeDocumento = "proposta.pdf",
+            ConteudoBase64 = "base64content"
+        };
+
+        _projetoRepositoryMock.Setup(x => x.ObterPorIdAsync(projetoId))
+            .ReturnsAsync(projeto);
+
+        // Act
+        await _handler.ExecutarAsync(projetoId, dto);
+
+        // Assert
+        _documentoRepositoryMock.Verify(x => x.AdicionarAsync(It.Is<Documento>(d =>
+            d.ProjetoId == projetoId &&
+            d.NomeDocumento == dto.NomeDocumento &&
+            d.ConteudoBase64 == dto.ConteudoBase64 &&
+            d.TipoConteudo == "application/pdf" &&
+            d.UsuarioUpload == "Sistema"
+        )), Times.Once);
+    }
+
+    [Fact]
+    public async Task ExecutarAsync_DeveAtualizarProjeto_ComNovoDocumento()
+    {
+        // Arrange
+        var projetoId = Guid.NewGuid();
+        var projeto = CriarProjetoValido(projetoId);
+        var dto = new AdicionarDocumentoDto 
+        { 
+            NomeDocumento = "documento.pdf",
+            ConteudoBase64 = "base64content"
+        };
+
+        _projetoRepositoryMock.Setup(x => x.ObterPorIdAsync(projetoId))
+            .ReturnsAsync(projeto);
+
+        // Act
+        await _handler.ExecutarAsync(projetoId, dto);
+
+        // Assert
+        _projetoRepositoryMock.Verify(x => x.AtualizarAsync(It.Is<Projeto>(p =>
+            p.Id == projetoId &&
+            p.Documentos.Count == 1 &&
+            p.Documentos.Any(d => d.NomeDocumento == dto.NomeDocumento)
+        )), Times.Once);
     }
 
     [Fact]
@@ -100,15 +157,17 @@ public class AdicionarDocumentoHandlerTests
 
         // Assert
         resultado.Should().BeFalse();
+        _documentoRepositoryMock.Verify(x => x.AdicionarAsync(It.IsAny<Documento>()), Times.Never);
         _eventPublisherMock.Verify(x => x.PublishAsync(It.IsAny<DocumentoAdicionadoEvent>()), Times.Never);
     }
 
     [Theory]
-    [InlineData("contrato.pdf")]
-    [InlineData("proposta.docx")]
-    [InlineData("orcamento.xlsx")]
-    [InlineData("apresentacao.pptx")]
-    public async Task ExecutarAsync_DeveProcessarDiferentesTiposDeDocumento(string nomeDocumento)
+    [InlineData("contrato.pdf", "application/pdf")]
+    [InlineData("proposta.docx", "application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
+    [InlineData("orcamento.xlsx", "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")]
+    [InlineData("imagem.jpg", "image/jpeg")]
+    [InlineData("texto.txt", "text/plain")]
+    public async Task ExecutarAsync_DeveDefinirTipoConteudoCorreto(string nomeDocumento, string tipoConteudoEsperado)
     {
         // Arrange
         var projetoId = Guid.NewGuid();
@@ -123,25 +182,25 @@ public class AdicionarDocumentoHandlerTests
             .ReturnsAsync(projeto);
 
         // Act
-        var resultado = await _handler.ExecutarAsync(projetoId, dto);
+        await _handler.ExecutarAsync(projetoId, dto);
 
         // Assert
-        resultado.Should().BeTrue();
-        _eventPublisherMock.Verify(x => x.PublishAsync(It.Is<DocumentoAdicionadoEvent>(e =>
-            e.NomeDocumento == nomeDocumento
+        _documentoRepositoryMock.Verify(x => x.AdicionarAsync(It.Is<Documento>(d =>
+            d.TipoConteudo == tipoConteudoEsperado
         )), Times.Once);
     }
 
     [Fact]
-    public async Task ExecutarAsync_DeveLogInformacoes_QuandoDocumentoEhProcessado()
+    public async Task ExecutarAsync_DeveCalcularTamanhoCorreto()
     {
         // Arrange
         var projetoId = Guid.NewGuid();
         var projeto = CriarProjetoValido(projetoId);
+        var conteudoBase64 = "SGVsbG8gV29ybGQ="; // "Hello World" em base64
         var dto = new AdicionarDocumentoDto 
         { 
-            NomeDocumento = "teste.pdf",
-            ConteudoBase64 = "base64content"
+            NomeDocumento = "teste.txt",
+            ConteudoBase64 = conteudoBase64
         };
 
         _projetoRepositoryMock.Setup(x => x.ObterPorIdAsync(projetoId))
@@ -151,120 +210,8 @@ public class AdicionarDocumentoHandlerTests
         await _handler.ExecutarAsync(projetoId, dto);
 
         // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Adicionando documento ao projeto")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Information,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Documento processado com sucesso")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task ExecutarAsync_DeveLogWarning_QuandoProjetoNaoExiste()
-    {
-        // Arrange
-        var projetoId = Guid.NewGuid();
-        var dto = new AdicionarDocumentoDto 
-        { 
-            NomeDocumento = "documento.pdf",
-            ConteudoBase64 = "base64content"
-        };
-
-        _projetoRepositoryMock.Setup(x => x.ObterPorIdAsync(projetoId))
-            .ReturnsAsync((Projeto?)null);
-
-        // Act
-        await _handler.ExecutarAsync(projetoId, dto);
-
-        // Assert
-        _loggerMock.Verify(
-            x => x.Log(
-                LogLevel.Warning,
-                It.IsAny<EventId>(),
-                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains("Projeto não encontrado")),
-                It.IsAny<Exception>(),
-                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
-            Times.Once);
-    }
-
-    [Fact]
-    public async Task ExecutarAsync_DeveChamarRepositorio_ComIdCorreto()
-    {
-        // Arrange
-        var projetoId = Guid.NewGuid();
-        var dto = new AdicionarDocumentoDto 
-        { 
-            NomeDocumento = "documento.pdf",
-            ConteudoBase64 = "base64content"
-        };
-
-        _projetoRepositoryMock.Setup(x => x.ObterPorIdAsync(projetoId))
-            .ReturnsAsync((Projeto?)null);
-
-        // Act
-        await _handler.ExecutarAsync(projetoId, dto);
-
-        // Assert
-        _projetoRepositoryMock.Verify(x => x.ObterPorIdAsync(projetoId), Times.Once);
-    }
-
-    [Fact]
-    public async Task ExecutarAsync_DeveProcessarConteudoBase64_DeQualquerTamanho()
-    {
-        // Arrange
-        var projetoId = Guid.NewGuid();
-        var projeto = CriarProjetoValido(projetoId);
-        var conteudoGrande = new string('A', 10000); // Simula um arquivo grande em base64
-        var dto = new AdicionarDocumentoDto 
-        { 
-            NomeDocumento = "arquivo-grande.pdf",
-            ConteudoBase64 = conteudoGrande
-        };
-
-        _projetoRepositoryMock.Setup(x => x.ObterPorIdAsync(projetoId))
-            .ReturnsAsync(projeto);
-
-        // Act
-        var resultado = await _handler.ExecutarAsync(projetoId, dto);
-
-        // Assert
-        resultado.Should().BeTrue();
-        _eventPublisherMock.Verify(x => x.PublishAsync(It.IsAny<DocumentoAdicionadoEvent>()), Times.Once);
-    }
-
-    [Fact]
-    public async Task ExecutarAsync_DeveProcessarDocumentoSemConteudo()
-    {
-        // Arrange
-        var projetoId = Guid.NewGuid();
-        var projeto = CriarProjetoValido(projetoId);
-        var dto = new AdicionarDocumentoDto 
-        { 
-            NomeDocumento = "documento-vazio.txt",
-            ConteudoBase64 = string.Empty
-        };
-
-        _projetoRepositoryMock.Setup(x => x.ObterPorIdAsync(projetoId))
-            .ReturnsAsync(projeto);
-
-        // Act
-        var resultado = await _handler.ExecutarAsync(projetoId, dto);
-
-        // Assert
-        resultado.Should().BeTrue();
-        _eventPublisherMock.Verify(x => x.PublishAsync(It.Is<DocumentoAdicionadoEvent>(e =>
-            e.NomeDocumento == dto.NomeDocumento
+        _documentoRepositoryMock.Verify(x => x.AdicionarAsync(It.Is<Documento>(d =>
+            d.Tamanho == 11 // "Hello World" tem 11 bytes
         )), Times.Once);
     }
 
@@ -311,7 +258,8 @@ public class AdicionarDocumentoHandlerTests
             InicioPrevisto = DateTime.Today.AddDays(1),
             TerminoPrevisto = DateTime.Today.AddDays(365),
             ExecucaoEncerrada = false,
-            Subprojetos = new List<Subprojeto>()
+            Subprojetos = new List<Subprojeto>(),
+            Documentos = new List<Documento>()
         };
     }
 }

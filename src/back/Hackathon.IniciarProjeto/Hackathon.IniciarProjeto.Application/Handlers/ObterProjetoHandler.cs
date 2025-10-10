@@ -107,6 +107,15 @@ public class ObterProjetoHandler
                     Servico = sr.Rubrica.Servico,
                     ReceitaFundep = sr.Rubrica.ReceitaFundep
                 }).ToList()
+            }).ToList(),
+            Documentos = projeto.Documentos.Select(doc => new DocumentoResponseDto
+            {
+                Id = doc.Id,
+                NomeDocumento = doc.NomeDocumento,
+                TipoConteudo = doc.TipoConteudo,
+                Tamanho = doc.Tamanho,
+                DataUpload = doc.DataUpload,
+                UsuarioUpload = doc.UsuarioUpload
             }).ToList()
         };
     }

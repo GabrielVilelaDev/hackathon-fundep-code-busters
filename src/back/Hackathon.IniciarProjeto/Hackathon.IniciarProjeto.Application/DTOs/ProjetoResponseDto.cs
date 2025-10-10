@@ -53,6 +53,7 @@ public record ProjetoResponseDto
     public EtapaProjeto Etapa { get; init; }
     public DateTime DataCriacao { get; init; }
     public List<SubprojetoResponseDto> Subprojetos { get; init; } = new();
+    public List<DocumentoResponseDto> Documentos { get; init; } = new();
 }
 
 public record SubprojetoResponseDto

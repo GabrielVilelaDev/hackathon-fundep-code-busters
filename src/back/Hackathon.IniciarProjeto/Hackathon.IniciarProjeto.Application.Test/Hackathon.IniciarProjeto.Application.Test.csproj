@@ -23,6 +23,11 @@
   <ItemGroup>
     <ProjectReference Include="..\Hackathon.IniciarProjeto.Application\Hackathon.IniciarProjeto.Application.csproj" />
     <ProjectReference Include="..\Hackathon.IniciarProjeto.Domain\Hackathon.IniciarProjeto.Domain.csproj" />
+    <ProjectReference Include="..\Hackathon.IniciarProjeto.Infrastructure\Hackathon.IniciarProjeto.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Repositories\" />
   </ItemGroup>
 
 </Project>
