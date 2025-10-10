@@ -1,41 +1,74 @@
+
+using Hackathon.AnalisarEAprovarProposta.Application.DTOs;
+using Hackathon.AnalisarEAprovarProposta.Application.Interfaces;
+using Hackathon.AnalisarEAprovarProposta.Domain.Enums;
+using Hackathon.AnalisarEAprovarProposta.Domain.Interfaces;
+using Hackathon.AnalisarEAprovarProposta.Infrastructure.Repositories;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+// Configuração do Swagger/Explorer
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
+
+//// --- BLOC DE REGISTRO DE SERVIÇOS (Local Corrigido) ---
+
+builder.Services.AddSingleton<IPropostaRepository, PropostaRepository>();
+//builder.Services.AddScoped<IAnalisarPropostaService, AnalisarPropostaService>();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
 
-var summaries = new[]
+// GET /api/propostas — listar todas as propostas (com filtro opcional por status)
+app.MapGet("/api/propostas", async (
+    IAnalisarPropostaService service,
+    StatusProposta? status
+    ) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
-
-app.MapGet("/weatherforecast", () =>
-{
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
+    var response = await service.ListarPropostasAsync(status);
+    return Results.Ok(response);
 })
-.WithName("GetWeatherForecast");
+.WithName("ListarPropostas")
+.WithTags("Propostas");
+
+// GET /api/propostas/{id} — buscar proposta por ID
+app.MapGet("/api/propostas/{id:guid}", async (
+    long id,
+    IAnalisarPropostaService service
+    ) =>
+{
+    var response = await service.ObterPorIdAsync(id);
+    return response is null ? Results.NotFound() : Results.Ok(response);
+})
+.WithName("BuscarPropostaPorId")
+.WithTags("Propostas");
+
+// POST /api/propostas/{id}/analysis — registra análise (aprovação ou devolução)
+app.MapPost("/api/propostas/{id}/analysis", async (
+    long id,
+    AnalisarPropostaRequest request,
+    IAnalisarPropostaService service
+    ) =>
+{
+    try
+    {
+        var response = await service.AnalisarAsync(id, request);
+        return Results.Ok(response);
+    }
+    catch (InvalidOperationException ex)
+    {
+        return Results.BadRequest(new { erro = ex.Message });
+    }
+})
+.WithName("AnalisarProposta")
+.WithTags("Propostas");
 
 app.Run();
 
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}

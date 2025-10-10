@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 
-namespace AnalisarEAprovarProposta.Controllers
+namespace Hackathon.AnalisarEAprovarProposta.Api.Controllers
 {
     [ApiController]
     [Route("[controller]")]

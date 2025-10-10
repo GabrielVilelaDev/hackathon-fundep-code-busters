@@ -1,4 +1,4 @@
-namespace AnalisarEAprovarProposta
+namespace Hackathon.AnalisarEAprovarProposta.Api
 {
     public class WeatherForecast
     {

@@ -1,6 +1,7 @@
-﻿namespace Hackathon.AnalisarEAprovarProposta.Domain;
-
-public class Class1
+﻿namespace Hackathon.AnalisarEAprovarProposta.Domain
 {
+    public class Class1
+    {
 
+    }
 }

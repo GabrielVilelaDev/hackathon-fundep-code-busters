@@ -1,8 +1,17 @@
-﻿namespace Hackathon.AnalisarEAprovarProposta.Domain.Enums;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 
-public enum StatusProposta
+namespace Hackathon.AnalisarEAprovarProposta.Domain.Enums
 {
-    EmAnalise,
-    Aprovada,
-    Devolvida
+
+    public enum StatusProposta
+    {
+        EmAnalise,
+        Aprovada,
+        Devolvida
+    }
+
 }

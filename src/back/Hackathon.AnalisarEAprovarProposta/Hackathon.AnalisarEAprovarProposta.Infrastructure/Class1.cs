@@ -1,6 +1,7 @@
-﻿namespace Hackathon.AnalisarEAprovarProposta.Infrastructure;
-
-public class Class1
+﻿namespace Hackathon.AnalisarEAprovarProposta.infrastructure
 {
+    public class Class1
+    {
 
+    }
 }
