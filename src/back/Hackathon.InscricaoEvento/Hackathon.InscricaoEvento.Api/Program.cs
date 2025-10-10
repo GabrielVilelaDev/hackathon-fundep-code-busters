@@ -4,6 +4,7 @@ using Hackathon.InscricaoEvento.Application.Handlers;
 using Hackathon.InscricaoEvento.Application.Validators;
 using Hackathon.InscricaoEvento.Domain.Interfaces;
 using Hackathon.InscricaoEvento.Infrastructure.Repositories;
+using Hackathon.InscricaoEvento.Infrastructure.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
@@ -13,6 +14,9 @@ builder.Services.AddSwaggerGen();
 // Registrar validadores
 builder.Services.AddScoped<IValidator<CadastrarEventoDto>, CadastrarEventoDtoValidator>();
 builder.Services.AddScoped<IValidator<RealizarMatriculaDto>, RealizarMatriculaDtoValidator>();
+
+builder.Services.AddScoped<EventoSeedService>();
+
 
 // Registrar handlers
 builder.Services.AddScoped<CadastrarEventoHandler>();
@@ -113,5 +117,12 @@ app.MapGet("/matriculas/{codigoAluno}", async (
 })
 .WithName("ListarMatriculasPorAluno")
 .WithTags("Matriculas");
+
+// Executar seed de projetos na inicialização
+using (var scope = app.Services.CreateScope())
+{
+    var seedService = scope.ServiceProvider.GetRequiredService<EventoSeedService>();
+    await seedService.SeedAsync();
+}
 
 app.Run();

@@ -35,6 +35,7 @@ builder.Services.AddSingleton<IDocumentoRepository, DocumentoRepositoryInMemory>
 // Registrar serviços de infraestrutura
 builder.Services.AddScoped<IEmailService, EmailServiceSimulado>();
 builder.Services.AddScoped<IEventPublisher, LocalEventPublisher>();
+builder.Services.AddScoped<ProjetoSeedService>();
 
 // Registrar event handlers
 builder.Services.AddScoped<IEventHandler<ProjetoCadastradoEvent>, EnviarEmailCoordenadorHandler>();
@@ -71,6 +72,7 @@ if (app.Environment.IsDevelopment() ||
 app.UseCors();
 
 app.UseHttpsRedirection();
+
 
 // Endpoint de saúde para health check
 app.MapGet("/health", () => Results.Ok(new
@@ -166,5 +168,12 @@ app.MapGet("/rubricas", async (IRubricaRepository rubricaRepository) =>
 })
 .WithName("ListarRubricas")
 .WithTags("Rubricas");
+
+// Executar seed de projetos na inicialização
+using (var scope = app.Services.CreateScope())
+{
+    var seedService = scope.ServiceProvider.GetRequiredService<ProjetoSeedService>();
+    await seedService.SeedAsync();
+}
 
 app.Run();
