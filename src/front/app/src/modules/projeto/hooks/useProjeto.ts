@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { toast } from "sonner";
 import { projetoApi } from "../services/projetoApi";
 import type { ProjetoResponse } from "../types/projeto.types";
 
@@ -19,8 +20,10 @@ export function useProjeto(id: string | undefined) {
       const data = await projetoApi.obterProjeto(id);
       setProjeto(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar projeto");
+      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar projeto";
+      setError(errorMessage);
       setProjeto(null);
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }

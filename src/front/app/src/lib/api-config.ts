@@ -14,7 +14,7 @@ export const API_ENDPOINTS: Record<string, ApiEndpoint> = {
   },
   projects: {
     name: 'Projects API',
-    baseURL: import.meta.env.VITE_PROJECTS_API_URL || 'http://localhost:3002/api',
+    baseURL: import.meta.env.VITE_PROJECTS_API_URL || 'http://localhost:8080',
     timeout: 30000,
   },
   reports: {

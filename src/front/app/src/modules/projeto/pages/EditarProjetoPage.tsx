@@ -1,61 +1,117 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Loader2 } from "lucide-react";
-import { LoadingSpinner } from "@design-system";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
+import { ArrowLeft, Save, Loader2, Plus, Trash2 } from "lucide-react";
+import {
+  Button,
+  Card,
+  CardContent,
+  InputForm,
+  Form,
+  TextareaForm,
+  DataPicker,
+  LoadingSpinner,
+} from "@design-system";
 import { useProjeto } from "../hooks/useProjeto";
 import { useProjetoMutations } from "../hooks/useProjetoMutations";
-import type { AtualizarProjetoDto } from "../types/projeto.types";
+import { AdicionarSubprojetoModal } from "../components/AdicionarSubprojetoModal";
+import type { SubprojetoDto } from "../types/projeto.types";
+
+// Schema de validação com Zod
+const projetoSchema = z.object({
+  titulo: z.string().min(1, "Título é obrigatório"),
+  resumo: z.string().min(1, "Resumo é obrigatório"),
+  objeto: z.string().min(1, "Objeto é obrigatório"),
+  coordenador: z.string().min(1, "Coordenador é obrigatório"),
+  coExecutor: z.string().optional(),
+  coFinanciador: z.string().optional(),
+  valor: z.coerce.number().min(0, "Valor deve ser maior ou igual a zero"),
+  custoAdministrativo: z.string().min(1, "Custo administrativo é obrigatório"),
+  cronogramaLiberacao: z.string().min(1, "Cronograma de liberação é obrigatório"),
+  bloqueiosMovimentacoes: z.string().min(1, "Bloqueios e movimentações é obrigatório"),
+  inicioPrevisto: z.date({ message: "Início previsto é obrigatório" }),
+  terminoPrevisto: z.date({ message: "Término previsto é obrigatório" }),
+  dataLimiteDespesas: z.date().optional(),
+  aguardandoProrrogacaoPara: z.date().optional(),
+});
+
+type ProjetoFormData = z.infer<typeof projetoSchema>;
 
 export function EditarProjetoPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { projeto, loading: loadingProjeto, error } = useProjeto(id);
   const { atualizarProjeto, loading: saving } = useProjetoMutations();
-  
-  const [formData, setFormData] = useState<AtualizarProjetoDto>({
-    titulo: "",
-    resumo: "",
-    objeto: "",
-    coordenador: "",
-    valor: 0,
-    custoAdministrativo: "",
-    cronogramaLiberacao: "",
-    bloqueiosMovimentacoes: "",
-    inicioPrevisto: "",
-    terminoPrevisto: "",
+  const [subprojetos, setSubprojetos] = useState<SubprojetoDto[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const form = useForm({
+    resolver: zodResolver(projetoSchema),
   });
 
+  // Preencher form quando o projeto for carregado
   useEffect(() => {
     if (projeto) {
-      setFormData({
+      form.reset({
         titulo: projeto.titulo,
         resumo: projeto.resumo,
         objeto: projeto.objeto,
         coordenador: projeto.coordenador,
-        coExecutor: projeto.coExecutor,
-        coFinanciador: projeto.coFinanciador,
+        coExecutor: projeto.coExecutor || undefined,
+        coFinanciador: projeto.coFinanciador || undefined,
         valor: projeto.valor,
         custoAdministrativo: projeto.custoAdministrativo,
         cronogramaLiberacao: projeto.cronogramaLiberacao,
         bloqueiosMovimentacoes: projeto.bloqueiosMovimentacoes,
-        dataLimiteDespesas: projeto.dataLimiteDespesas,
-        inicioPrevisto: projeto.inicioPrevisto,
-        terminoPrevisto: projeto.terminoPrevisto,
-        aguardandoProrrogacaoPara: projeto.aguardandoProrrogacaoPara,
+        inicioPrevisto: projeto.inicioPrevisto ? new Date(projeto.inicioPrevisto) : undefined,
+        terminoPrevisto: projeto.terminoPrevisto ? new Date(projeto.terminoPrevisto) : undefined,
+        dataLimiteDespesas: projeto.dataLimiteDespesas ? new Date(projeto.dataLimiteDespesas) : undefined,
+        aguardandoProrrogacaoPara: projeto.aguardandoProrrogacaoPara ? new Date(projeto.aguardandoProrrogacaoPara) : undefined,
       });
+      // Carregar subprojetos existentes
+      setSubprojetos(projeto.subprojetos || []);
     }
-  }, [projeto]);
+  }, [projeto, form]);
 
-  const updateFormData = (field: keyof AtualizarProjetoDto, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
+  const handleAddSubprojeto = (subprojeto: SubprojetoDto) => {
+    setSubprojetos([...subprojetos, subprojeto]);
+    setIsModalOpen(false);
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleRemoveSubprojeto = (index: number) => {
+    setSubprojetos(subprojetos.filter((_, i) => i !== index));
+  };
+
+  const handleSubmit = async (data: ProjetoFormData) => {
     if (!id) return;
 
     try {
-      await atualizarProjeto(id, formData);
+      // Helper para formatar datas
+      const formatDate = (date: Date | undefined): string | undefined => {
+        if (!date) return undefined;
+        return date.toISOString().split('T')[0]; // YYYY-MM-DD
+      };
+
+      const dataToSubmit = {
+        titulo: data.titulo,
+        resumo: data.resumo,
+        objeto: data.objeto,
+        coordenador: data.coordenador,
+        coExecutor: data.coExecutor,
+        coFinanciador: data.coFinanciador,
+        valor: data.valor,
+        custoAdministrativo: data.custoAdministrativo,
+        cronogramaLiberacao: data.cronogramaLiberacao,
+        bloqueiosMovimentacoes: data.bloqueiosMovimentacoes,
+        inicioPrevisto: formatDate(data.inicioPrevisto)!,
+        terminoPrevisto: formatDate(data.terminoPrevisto)!,
+        dataLimiteDespesas: formatDate(data.dataLimiteDespesas),
+        aguardandoProrrogacaoPara: formatDate(data.aguardandoProrrogacaoPara),
+      };
+
+      await atualizarProjeto(id, dataToSubmit);
       navigate(`/projetos/${id}`);
     } catch (err) {
       console.error("Erro ao atualizar projeto:", err);
@@ -92,255 +148,255 @@ export function EditarProjetoPage() {
     <div className="container mx-auto py-6 px-4 space-y-6 max-w-4xl">
       {/* Header */}
       <div>
-        <button
+        <Button
+          variant="ghost"
           onClick={() => navigate(`/projetos/${id}`)}
-          className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2"
+          className="mb-2 -ml-3"
         >
           <ArrowLeft className="h-4 w-4" />
           Voltar
-        </button>
+        </Button>
         <h1 className="text-3xl font-bold tracking-tight">Editar Projeto</h1>
         <p className="text-muted-foreground">{projeto.codigoProjeto}</p>
       </div>
 
       {/* Form */}
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="rounded-lg border p-6 space-y-6">
-          <h2 className="text-xl font-semibold">Informações Básicas</h2>
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+          {/* Card 1: Informações Básicas */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Informações Básicas</h2>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">Título *</label>
-            <input
-              type="text"
-              value={formData.titulo}
-              onChange={(e) => updateFormData("titulo", e.target.value)}
-              className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Resumo *</label>
-            <textarea
-              value={formData.resumo}
-              onChange={(e) => updateFormData("resumo", e.target.value)}
-              rows={3}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">Objeto *</label>
-            <textarea
-              value={formData.objeto}
-              onChange={(e) => updateFormData("objeto", e.target.value)}
-              rows={3}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="rounded-lg border p-6 space-y-6">
-          <h2 className="text-xl font-semibold">Responsáveis</h2>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Coordenador *
-              </label>
-              <input
-                type="text"
-                value={formData.coordenador}
-                onChange={(e) => updateFormData("coordenador", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <InputForm
+                name="titulo"
+                label="Título"
+                control={form.control}
                 required
               />
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Co-Executor
-              </label>
-              <input
-                type="text"
-                value={formData.coExecutor || ""}
-                onChange={(e) => updateFormData("coExecutor", e.target.value || undefined)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </div>
-
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Co-Financiador
-              </label>
-              <input
-                type="text"
-                value={formData.coFinanciador || ""}
-                onChange={(e) =>
-                  updateFormData("coFinanciador", e.target.value || undefined)
-                }
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              />
-            </div>
-          </div>
-        </div>
-
-        <div className="rounded-lg border p-6 space-y-6">
-          <h2 className="text-xl font-semibold">Financeiro</h2>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Valor Total (R$) *
-              </label>
-              <input
-                type="number"
-                step="0.01"
-                value={formData.valor}
-                onChange={(e) => updateFormData("valor", parseFloat(e.target.value))}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <TextareaForm
+                name="resumo"
+                label="Resumo"
+                control={form.control}
                 required
+                rows={3}
               />
-            </div>
-          </div>
 
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Custo Administrativo *
-            </label>
-            <textarea
-              value={formData.custoAdministrativo}
-              onChange={(e) =>
-                updateFormData("custoAdministrativo", e.target.value)
-              }
-              rows={2}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Cronograma de Liberação *
-            </label>
-            <textarea
-              value={formData.cronogramaLiberacao}
-              onChange={(e) =>
-                updateFormData("cronogramaLiberacao", e.target.value)
-              }
-              rows={2}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="text-sm font-medium mb-2 block">
-              Bloqueios e Movimentações *
-            </label>
-            <textarea
-              value={formData.bloqueiosMovimentacoes}
-              onChange={(e) =>
-                updateFormData("bloqueiosMovimentacoes", e.target.value)
-              }
-              rows={2}
-              className="flex w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              required
-            />
-          </div>
-        </div>
-
-        <div className="rounded-lg border p-6 space-y-6">
-          <h2 className="text-xl font-semibold">Prazos</h2>
-
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Início Previsto *
-              </label>
-              <input
-                type="date"
-                value={formData.inicioPrevisto}
-                onChange={(e) => updateFormData("inicioPrevisto", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <TextareaForm
+                name="objeto"
+                label="Objeto"
+                control={form.control}
                 required
+                rows={3}
               />
-            </div>
+            </CardContent>
+          </Card>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Término Previsto *
-              </label>
-              <input
-                type="date"
-                value={formData.terminoPrevisto}
-                onChange={(e) => updateFormData("terminoPrevisto", e.target.value)}
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+          {/* Card 2: Responsáveis */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Responsáveis</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputForm
+                  name="coordenador"
+                  label="Coordenador"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="coExecutor"
+                  label="Co-Executor"
+                  control={form.control}
+                />
+
+                <InputForm
+                  name="coFinanciador"
+                  label="Co-Financiador"
+                  control={form.control}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Informações Financeiras */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Informações Financeiras</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputForm
+                  name="valor"
+                  label="Valor Total (R$)"
+                  type="number"
+                  control={form.control}
+                  required
+                  step="0.01"
+                />
+              </div>
+
+              <TextareaForm
+                name="custoAdministrativo"
+                label="Custo Administrativo"
+                control={form.control}
                 required
+                rows={2}
               />
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Data Limite de Despesas
-              </label>
-              <input
-                type="date"
-                value={formData.dataLimiteDespesas || ""}
-                onChange={(e) =>
-                  updateFormData("dataLimiteDespesas", e.target.value || undefined)
-                }
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <TextareaForm
+                name="cronogramaLiberacao"
+                label="Cronograma de Liberação"
+                control={form.control}
+                required
+                rows={2}
               />
-            </div>
 
-            <div>
-              <label className="text-sm font-medium mb-2 block">
-                Aguardando Prorrogação Para
-              </label>
-              <input
-                type="date"
-                value={formData.aguardandoProrrogacaoPara || ""}
-                onChange={(e) =>
-                  updateFormData("aguardandoProrrogacaoPara", e.target.value || undefined)
-                }
-                className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+              <TextareaForm
+                name="bloqueiosMovimentacoes"
+                label="Bloqueios e Movimentações"
+                control={form.control}
+                required
+                rows={2}
               />
-            </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 4: Prazos e Datas */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Prazos e Datas</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <DataPicker
+                  name="inicioPrevisto"
+                  label="Início Previsto"
+                  control={form.control}
+                  required
+                />
+
+                <DataPicker
+                  name="terminoPrevisto"
+                  label="Término Previsto"
+                  control={form.control}
+                  required
+                />
+
+                <DataPicker
+                  name="dataLimiteDespesas"
+                  label="Data Limite de Despesas"
+                  control={form.control}
+                />
+
+                <DataPicker
+                  name="aguardandoProrrogacaoPara"
+                  label="Aguardando Prorrogação Para"
+                  control={form.control}
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 5: Subprojetos */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex items-center justify-between">
+                <h2 className="text-xl font-semibold">Subprojetos</h2>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsModalOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Adicionar Subprojeto
+                </Button>
+              </div>
+
+              {subprojetos.length === 0 ? (
+                <p className="text-sm text-muted-foreground text-center py-8">
+                  Nenhum subprojeto adicionado
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {subprojetos.map((sub, index) => (
+                    <Card key={index}>
+                      <CardContent className="pt-4">
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 space-y-2">
+                            <div>
+                              <h3 className="font-semibold">{sub.nome}</h3>
+                              <p className="text-sm text-muted-foreground">
+                                {sub.codigoSubprojeto}
+                              </p>
+                            </div>
+                            <p className="text-sm">{sub.objeto}</p>
+                            <div className="flex gap-4 text-sm text-muted-foreground">
+                              <span>
+                                Início: {new Date(sub.inicioPrevisto).toLocaleDateString("pt-BR")}
+                              </span>
+                              <span>
+                                Término: {new Date(sub.terminoPrevisto).toLocaleDateString("pt-BR")}
+                              </span>
+                            </div>
+                            {sub.rubricas && sub.rubricas.length > 0 && (
+                              <p className="text-sm text-muted-foreground">
+                                {sub.rubricas.length} rubrica(s)
+                              </p>
+                            )}
+                          </div>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRemoveSubprojeto(index)}
+                          >
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Actions */}
+          <div className="flex justify-end gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate(`/projetos/${id}`)}
+              disabled={saving}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Salvar Alterações
+                </>
+              )}
+            </Button>
           </div>
-        </div>
+        </form>
+      </Form>
 
-        {/* Actions */}
-        <div className="flex justify-end gap-3">
-          <button
-            type="button"
-            onClick={() => navigate(`/projetos/${id}`)}
-            disabled={saving}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-10 px-4 py-2 disabled:pointer-events-none disabled:opacity-50"
-          >
-            Cancelar
-          </button>
-          <button
-            type="submit"
-            disabled={saving}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2 disabled:pointer-events-none disabled:opacity-50"
-          >
-            {saving ? (
-              <>
-                <Loader2 className="h-4 w-4 animate-spin" />
-                Salvando...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4" />
-                Salvar Alterações
-              </>
-            )}
-          </button>
-        </div>
-      </form>
+      {/* Modal de Adicionar Subprojeto */}
+      <AdicionarSubprojetoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAdd={handleAddSubprojeto}
+        rubricasDisponiveis={[]}
+      />
     </div>
   );
 }

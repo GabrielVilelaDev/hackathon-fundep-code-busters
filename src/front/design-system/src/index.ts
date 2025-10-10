@@ -78,3 +78,5 @@ export { Sidebar } from "./components/SideBar";
 export { Modal } from "./components/Modal";
 
 export { Toaster } from "./components/ui/sonner";
+
+export { toast } from "sonner";

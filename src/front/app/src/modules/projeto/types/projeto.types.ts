@@ -198,7 +198,7 @@ export interface ProjetoResponse {
   terminoPrevisto: string;
   aguardandoProrrogacaoPara?: string;
   
-  etapaAtual: EtapaProjeto;
+  etapa: EtapaProjeto;
   dataCriacao: string;
   dataUltimaAtualizacao: string;
   

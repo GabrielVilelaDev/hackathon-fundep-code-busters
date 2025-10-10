@@ -1,9 +1,9 @@
-import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { ArrowLeft, ArrowRight, Save, Loader2 } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Plus, Trash2 } from "lucide-react";
+import { useState } from "react";
 import {
   Button,
   Card,
@@ -18,8 +18,10 @@ import {
   TipoOrcamento,
   TipoAplicacaoPermitida,
   type ImportarProjetoDto,
+  type SubprojetoDto,
 } from "../types/projeto.types";
 import { useProjetoMutations } from "../hooks/useProjetoMutations";
+import { AdicionarSubprojetoModal } from "../components/AdicionarSubprojetoModal";
 
 // Schema de validação com Zod
 const projetoSchema = z.object({
@@ -42,9 +44,9 @@ const projetoSchema = z.object({
   referenciaFinanciador: z.string().min(1, "Referência financiador é obrigatória"),
 
   // Step 3 - Informações Financeiras
-  valor: z.number().min(0, "Valor deve ser maior ou igual a zero"),
+  valor: z.coerce.number().min(0, "Valor deve ser maior ou igual a zero"),
   moeda: z.string().min(1, "Moeda é obrigatória"),
-  amf: z.number().min(0, "AMF deve ser maior ou igual a zero"),
+  amf: z.coerce.number().min(0, "AMF deve ser maior ou igual a zero"),
   tipoOrcamento: z.string().min(1, "Tipo de orçamento é obrigatório"),
   conta: z.string().min(1, "Conta é obrigatória"),
   banco: z.string().min(1, "Banco é obrigatório"),
@@ -61,7 +63,7 @@ const projetoSchema = z.object({
   cronogramaLiberacao: z.string().min(1, "Cronograma de liberação é obrigatório"),
   bloqueiosMovimentacoes: z.string().min(1, "Bloqueios e movimentações é obrigatório"),
   moedaParaOrcar: z.string().min(1, "Moeda para orçar é obrigatória"),
-  saldoAdiantamento: z.number().min(0, "Saldo adiantamento deve ser maior ou igual a zero"),
+  saldoAdiantamento: z.coerce.number().min(0, "Saldo adiantamento deve ser maior ou igual a zero"),
   implantacaoProvisoria: z.boolean(),
 
   // Campos adicionais
@@ -78,9 +80,10 @@ type ProjetoFormData = z.infer<typeof projetoSchema>;
 export function NovoProjetoPage() {
   const navigate = useNavigate();
   const { importarProjeto, loading } = useProjetoMutations();
-  const [currentStep, setCurrentStep] = useState(1);
+  const [subprojetos, setSubprojetos] = useState<SubprojetoDto[]>([]);
+  const [isModalOpen, setIsModalOpen] = useState(false);
 
-  const form = useForm<ProjetoFormData>({
+  const form = useForm({
     resolver: zodResolver(projetoSchema),
     defaultValues: {
       tipoOrcamento: String(TipoOrcamento.Oficial),
@@ -94,10 +97,10 @@ export function NovoProjetoPage() {
       moeda: "BRL",
       moedaParaOrcar: "BRL",
       saldoAdiantamento: 0,
+      valor: 0,
+      amf: 0,
     },
   });
-
-  const totalSteps = 4;
 
   const handleSubmit = async (data: ProjetoFormData) => {
     try {
@@ -116,8 +119,9 @@ export function NovoProjetoPage() {
         inicioPrevisto: formatDate(data.inicioPrevisto),
         terminoPrevisto: formatDate(data.terminoPrevisto),
         dataLimiteDespesas: formatDate(data.dataLimiteDespesas),
+        subprojetos: subprojetos, // Adicionar os subprojetos criados
       };
-      
+
       const result = await importarProjeto(dataToSubmit as unknown as ImportarProjetoDto);
       navigate(`/projetos/${result.id}`);
     } catch (err) {
@@ -125,303 +129,9 @@ export function NovoProjetoPage() {
     }
   };
 
-  const renderStep = () => {
-    switch (currentStep) {
-      case 1:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Informações Básicas</h2>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <InputForm
-                name="codigoProjeto"
-                label="Código do Projeto"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="centroCusto"
-                label="Centro de Custo"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="referenciaFundep"
-                label="Referência FUNDEP"
-                control={form.control}
-                required
-              />
-            </div>
-
-            <InputForm
-              name="titulo"
-              label="Título do Projeto"
-              control={form.control}
-              required
-            />
-
-            <TextareaForm
-              name="resumo"
-              label="Resumo"
-              control={form.control}
-              required
-              rows={3}
-            />
-
-            <TextareaForm
-              name="objeto"
-              label="Objeto"
-              control={form.control}
-              required
-              rows={3}
-            />
-          </div>
-        );
-
-      case 2:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Responsáveis e Instituições</h2>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <InputForm
-                name="coordenador"
-                label="Coordenador"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="executor"
-                label="Executor"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="coExecutor"
-                label="Co-Executor"
-                control={form.control}
-              />
-
-              <InputForm
-                name="referenciaExecutor"
-                label="Referência Executor"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="financiador"
-                label="Financiador"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="coFinanciador"
-                label="Co-Financiador"
-                control={form.control}
-              />
-
-              <InputForm
-                name="origemRecurso"
-                label="Origem do Recurso"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="referenciaFinanciador"
-                label="Referência Financiador"
-                control={form.control}
-                required
-              />
-            </div>
-          </div>
-        );
-
-      case 3:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Informações Financeiras</h2>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <InputForm
-                name="valor"
-                label="Valor Total (R$)"
-                type="number"
-                control={form.control}
-                required
-                step="0.01"
-              />
-
-              <InputForm
-                name="moeda"
-                label="Moeda"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="amf"
-                label="AMF (%)"
-                type="number"
-                control={form.control}
-                required
-                step="0.01"
-              />
-
-              <InputSelectForm
-                name="tipoOrcamento"
-                label="Tipo de Orçamento"
-                control={form.control}
-                required
-                options={[
-                  { label: "Oficial", value: String(TipoOrcamento.Oficial) },
-                  { label: "Provisório", value: String(TipoOrcamento.Provisorio) },
-                ]}
-              />
-
-              <InputForm
-                name="conta"
-                label="Conta"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="banco"
-                label="Banco"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="agencia"
-                label="Agência"
-                control={form.control}
-                required
-              />
-
-              <InputForm
-                name="contaBancaria"
-                label="Conta Bancária"
-                control={form.control}
-                required
-              />
-            </div>
-
-            <TextareaForm
-              name="custoAdministrativo"
-              label="Custo Administrativo"
-              control={form.control}
-              required
-              rows={2}
-            />
-          </div>
-        );
-
-      case 4:
-        return (
-          <div className="space-y-6">
-            <h2 className="text-xl font-semibold">Prazos e Datas</h2>
-            
-            <div className="grid gap-4 md:grid-cols-2">
-              <DataPicker
-                name="dataImplantacao"
-                label="Data de Implantação"
-                control={form.control}
-                required
-                placeholder="Selecione a data"
-              />
-
-              <DataPicker
-                name="dataAssinatura"
-                label="Data de Assinatura"
-                control={form.control}
-                required
-                placeholder="Selecione a data"
-              />
-
-              <DataPicker
-                name="inicioPrevisto"
-                label="Início Previsto"
-                control={form.control}
-                required
-                placeholder="Selecione a data"
-              />
-
-              <DataPicker
-                name="terminoPrevisto"
-                label="Término Previsto"
-                control={form.control}
-                required
-                placeholder="Selecione a data"
-              />
-
-              <DataPicker
-                name="dataLimiteDespesas"
-                label="Data Limite de Despesas"
-                control={form.control}
-                placeholder="Selecione a data"
-              />
-            </div>
-
-            <TextareaForm
-              name="cronogramaLiberacao"
-              label="Cronograma de Liberação"
-              control={form.control}
-              required
-              rows={3}
-            />
-
-            <TextareaForm
-              name="bloqueiosMovimentacoes"
-              label="Bloqueios e Movimentações"
-              control={form.control}
-              required
-              rows={3}
-            />
-
-            <InputForm
-              name="moedaParaOrcar"
-              label="Moeda para Orçar"
-              control={form.control}
-              required
-            />
-
-            <InputForm
-              name="saldoAdiantamento"
-              label="Saldo Adiantamento"
-              type="number"
-              control={form.control}
-              required
-              step="0.01"
-            />
-
-            <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="implantacao-provisoria"
-                {...form.register("implantacaoProvisoria")}
-                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-ring"
-              />
-              <label
-                htmlFor="implantacao-provisoria"
-                className="text-sm font-medium cursor-pointer"
-              >
-                Implantação Provisória
-              </label>
-            </div>
-          </div>
-        );
-
-      default:
-        return null;
-    }
+  const handleAddSubprojeto = (subprojeto: SubprojetoDto) => {
+    setSubprojetos([...subprojetos, subprojeto]);
+    setIsModalOpen(false);
   };
 
   return (
@@ -442,82 +152,375 @@ export function NovoProjetoPage() {
         </p>
       </div>
 
-      {/* Progress Steps */}
-      <div className="flex items-center justify-between">
-        {Array.from({ length: totalSteps }, (_, i) => i + 1).map((step) => (
-          <div key={step} className="flex items-center flex-1">
-            <div className="flex items-center gap-2">
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-full text-sm font-medium ${
-                  step === currentStep
-                    ? "bg-primary text-primary-foreground"
-                    : step < currentStep
-                    ? "bg-green-500 text-white"
-                    : "bg-muted text-muted-foreground"
-                }`}
-              >
-                {step}
-              </div>
-              {step < totalSteps && (
-                <div
-                  className={`h-0.5 w-full ${
-                    step < currentStep ? "bg-green-500" : "bg-muted"
-                  }`}
-                />
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
-
       <Form {...form}>
         <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-          {/* Form */}
+          {/* Informações Básicas */}
           <Card>
-            <CardContent className="pt-6">{renderStep()}</CardContent>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Informações Básicas</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputForm
+                  name="codigoProjeto"
+                  label="Código do Projeto"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="centroCusto"
+                  label="Centro de Custo"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="referenciaFundep"
+                  label="Referência FUNDEP"
+                  control={form.control}
+                  required
+                />
+              </div>
+
+              <InputForm
+                name="titulo"
+                label="Título do Projeto"
+                control={form.control}
+                required
+              />
+
+              <TextareaForm
+                name="resumo"
+                label="Resumo"
+                control={form.control}
+                required
+                rows={3}
+              />
+
+              <TextareaForm
+                name="objeto"
+                label="Objeto"
+                control={form.control}
+                required
+                rows={3}
+              />
+            </CardContent>
           </Card>
 
-          {/* Navigation */}
-          <div className="flex justify-between">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setCurrentStep((prev) => Math.max(1, prev - 1))}
-              disabled={currentStep === 1}
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Anterior
-            </Button>
+          {/* Responsáveis e Instituições */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Responsáveis e Instituições</h2>
 
-            {currentStep < totalSteps ? (
-              <Button
-                type="button"
-                onClick={() => setCurrentStep((prev) => Math.min(totalSteps, prev + 1))}
-              >
-                Próximo
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            ) : (
-              <Button
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    Salvando...
-                  </>
-                ) : (
-                  <>
-                    <Save className="h-4 w-4" />
-                    Criar Projeto
-                  </>
-                )}
-              </Button>
-            )}
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputForm
+                  name="coordenador"
+                  label="Coordenador"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="executor"
+                  label="Executor"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="coExecutor"
+                  label="Co-Executor"
+                  control={form.control}
+                />
+
+                <InputForm
+                  name="referenciaExecutor"
+                  label="Referência Executor"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="financiador"
+                  label="Financiador"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="coFinanciador"
+                  label="Co-Financiador"
+                  control={form.control}
+                />
+
+                <InputForm
+                  name="origemRecurso"
+                  label="Origem do Recurso"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="referenciaFinanciador"
+                  label="Referência Financiador"
+                  control={form.control}
+                  required
+                />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Card 3: Subprojetos */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <div className="flex justify-between items-center">
+                <h2 className="text-xl font-semibold">Subprojetos ({subprojetos.length})</h2>
+                <Button type="button" variant="outline" onClick={() => setIsModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Adicionar Subprojeto
+                </Button>
+              </div>
+
+              {subprojetos.length > 0 && (
+                <div className="space-y-3">
+                  {subprojetos.map((subprojeto, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between p-4 border rounded-lg bg-gray-50"
+                    >
+                      <div>
+                        <p className="font-medium">{subprojeto.nome}</p>
+                        <p className="text-sm text-gray-600">Código: {subprojeto.codigoSubprojeto}</p>
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setSubprojetos(subprojetos.filter((_, i) => i !== index));
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {subprojetos.length === 0 && (
+                <p className="text-sm text-gray-500 text-center py-4">
+                  Nenhum subprojeto adicionado. Clique no botão acima para adicionar.
+                </p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Card 4: Informações Financeiras */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Informações Financeiras</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <InputForm
+                  name="valor"
+                  label="Valor Total (R$)"
+                  type="number"
+                  control={form.control}
+                  required
+                  step="0.01"
+                />
+
+                <InputForm
+                  name="moeda"
+                  label="Moeda"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="amf"
+                  label="AMF (%)"
+                  type="number"
+                  control={form.control}
+                  required
+                  step="0.01"
+                />
+
+                <InputSelectForm
+                  name="tipoOrcamento"
+                  label="Tipo de Orçamento"
+                  control={form.control}
+                  required
+                  options={[
+                    { label: "Oficial", value: String(TipoOrcamento.Oficial) },
+                    { label: "Provisório", value: String(TipoOrcamento.Provisorio) },
+                  ]}
+                />
+
+                <InputForm
+                  name="conta"
+                  label="Conta"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="banco"
+                  label="Banco"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="agencia"
+                  label="Agência"
+                  control={form.control}
+                  required
+                />
+
+                <InputForm
+                  name="contaBancaria"
+                  label="Conta Bancária"
+                  control={form.control}
+                  required
+                />
+              </div>
+
+              <TextareaForm
+                name="custoAdministrativo"
+                label="Custo Administrativo"
+                control={form.control}
+                required
+                rows={2}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Prazos e Datas */}
+          <Card>
+            <CardContent className="pt-6 space-y-6">
+              <h2 className="text-xl font-semibold">Prazos e Datas</h2>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <DataPicker
+                  name="dataImplantacao"
+                  label="Data de Implantação"
+                  control={form.control}
+                  required
+                  placeholder="Selecione a data"
+                />
+
+                <DataPicker
+                  name="dataAssinatura"
+                  label="Data de Assinatura"
+                  control={form.control}
+                  required
+                  placeholder="Selecione a data"
+                />
+
+                <DataPicker
+                  name="inicioPrevisto"
+                  label="Início Previsto"
+                  control={form.control}
+                  required
+                  placeholder="Selecione a data"
+                />
+
+                <DataPicker
+                  name="terminoPrevisto"
+                  label="Término Previsto"
+                  control={form.control}
+                  required
+                  placeholder="Selecione a data"
+                />
+
+                <DataPicker
+                  name="dataLimiteDespesas"
+                  label="Data Limite de Despesas"
+                  control={form.control}
+                  placeholder="Selecione a data"
+                />
+              </div>
+
+              <TextareaForm
+                name="cronogramaLiberacao"
+                label="Cronograma de Liberação"
+                control={form.control}
+                required
+                rows={3}
+              />
+
+              <TextareaForm
+                name="bloqueiosMovimentacoes"
+                label="Bloqueios e Movimentações"
+                control={form.control}
+                required
+                rows={3}
+              />
+
+              <InputForm
+                name="moedaParaOrcar"
+                label="Moeda para Orçar"
+                control={form.control}
+                required
+              />
+
+              <InputForm
+                name="saldoAdiantamento"
+                label="Saldo Adiantamento"
+                type="number"
+                control={form.control}
+                required
+                step="0.01"
+              />
+
+              <div className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  id="implantacao-provisoria"
+                  {...form.register("implantacaoProvisoria")}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-ring"
+                />
+                <label
+                  htmlFor="implantacao-provisoria"
+                  className="text-sm font-medium cursor-pointer"
+                >
+                  Implantação Provisória
+                </label>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submit Button */}
+          <div className="flex justify-end">
+            <Button
+              type="submit"
+              disabled={loading}
+              size="lg"
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Salvando...
+                </>
+              ) : (
+                <>
+                  <Save className="h-4 w-4" />
+                  Criar Projeto
+                </>
+              )}
+            </Button>
           </div>
         </form>
       </Form>
+
+      {/* Modal para adicionar subprojeto */}
+      <AdicionarSubprojetoModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onAdd={handleAddSubprojeto}
+        rubricasDisponiveis={[]}
+      />
     </div>
   );
 }

@@ -51,7 +51,7 @@ const EditarProjetoPage = lazy(
 );
 
 const LazyRoute = ({ children }: { children: React.ReactNode }) => {
-  return <Suspense fallback={<LoadingSpinner />}>{children}</Suspense>;
+  return <Suspense fallback={<LoadingSpinner fullScreen />}>{children}</Suspense>;
 };
 
 export const router = createBrowserRouter([

@@ -39,6 +39,16 @@ builder.Services.AddScoped<IEventHandler<ProjetoCadastradoEvent>, EnviarEmailCoo
 builder.Services.AddScoped<IEventHandler<ProjetoStatusAtualizadoEvent>, LogarStatusAtualizadoHandler>();
 builder.Services.AddScoped<IEventHandler<ProjetoAtualizadoEvent>, LogarProjetoAtualizadoHandler>();
 builder.Services.AddScoped<IEventHandler<DocumentoAdicionadoEvent>, LogarDocumentoAdicionadoHandler>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin() // Permite qualquer origem
+                  .AllowAnyMethod()   // Permite qualquer método HTTP (GET, POST, etc.)
+                  .AllowAnyHeader();  // Permite qualquer cabeçalho na requisição
+        });
+});
 
 var app = builder.Build();
 
@@ -54,6 +64,8 @@ if (app.Environment.IsDevelopment() ||
         c.RoutePrefix = "swagger";
     });
 }
+
+app.UseCors("AllowAll");
 
 app.UseHttpsRedirection();
 

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { toast } from "sonner";
 import { projetoApi } from "../services/projetoApi";
 import type {
   ImportarProjetoDto,
@@ -16,11 +17,13 @@ export function useProjetoMutations() {
       setLoading(true);
       setError(null);
       const result = await projetoApi.importarProjeto(dto);
+      toast.success("Projeto importado com sucesso!");
       return result;
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao importar projeto";
       setError(errorMessage);
+      toast.error(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
@@ -32,11 +35,13 @@ export function useProjetoMutations() {
       setLoading(true);
       setError(null);
       const result = await projetoApi.atualizarProjeto(id, dto);
+      toast.success("Projeto atualizado com sucesso!");
       return result;
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao atualizar projeto";
       setError(errorMessage);
+      toast.error(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
@@ -48,10 +53,12 @@ export function useProjetoMutations() {
       setLoading(true);
       setError(null);
       await projetoApi.atualizarStatus(id, dto);
+      toast.success("Status atualizado com sucesso!");
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao atualizar status";
       setError(errorMessage);
+      toast.error(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);
@@ -63,11 +70,13 @@ export function useProjetoMutations() {
       setLoading(true);
       setError(null);
       const result = await projetoApi.adicionarDocumento(id, dto);
+      toast.success("Documento adicionado com sucesso!");
       return result;
     } catch (err) {
       const errorMessage =
         err instanceof Error ? err.message : "Erro ao adicionar documento";
       setError(errorMessage);
+      toast.error(errorMessage);
       throw new Error(errorMessage);
     } finally {
       setLoading(false);

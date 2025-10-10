@@ -7,11 +7,15 @@ import {
   Upload,
   Calendar,
   DollarSign,
-  Building,
   User,
   FileText,
 } from "lucide-react";
-import { LoadingSpinner } from "@design-system";
+import {
+  Button,
+  Card,
+  CardContent,
+  LoadingSpinner,
+} from "@design-system";
 import { useProjeto } from "../hooks/useProjeto";
 import { EtapaProjetoLabels, TipoOrcamentoLabels } from "../types/projeto.types";
 import { StatusUpdateModal } from "../components/StatusUpdateModal";
@@ -54,17 +58,18 @@ export function ProjetoDetailPage() {
   if (error || !projeto) {
     return (
       <div className="container mx-auto py-12 px-4">
-        <div className="rounded-lg border border-red-500 bg-red-50 p-6 text-center dark:border-red-700 dark:bg-red-900/20">
-          <p className="text-red-700 dark:text-red-300">
-            {error || "Projeto não encontrado"}
-          </p>
-          <button
-            onClick={() => navigate("/projetos")}
-            className="mt-4 inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2"
-          >
-            Voltar para Lista
-          </button>
-        </div>
+        <Card className="border-destructive bg-destructive/10">
+          <CardContent className="pt-6">
+            <p className="text-center text-destructive">
+              {error || "Projeto não encontrado"}
+            </p>
+            <div className="flex justify-center mt-4">
+              <Button onClick={() => navigate("/projetos")}>
+                Voltar para Lista
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -74,34 +79,34 @@ export function ProjetoDetailPage() {
       {/* Header */}
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div className="space-y-1">
-          <button
+          <Button
+            variant="ghost"
             onClick={() => navigate("/projetos")}
-            className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground mb-2"
+            className="mb-2 -ml-3"
           >
             <ArrowLeft className="h-4 w-4" />
             Voltar
-          </button>
+          </Button>
           <h1 className="text-3xl font-bold tracking-tight">{projeto.titulo}</h1>
           <p className="text-muted-foreground">{projeto.codigoProjeto}</p>
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold">
-            {EtapaProjetoLabels[projeto.etapaAtual]}
+            {EtapaProjetoLabels[projeto.etapa]}
           </span>
-          <button
+          <Button
+            variant="outline"
             onClick={() => setShowStatusModal(true)}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground h-9 px-3"
           >
             <RefreshCw className="h-4 w-4" />
             Atualizar Status
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => navigate(`/projetos/${id}/editar`)}
-            className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-3"
           >
             <Edit className="h-4 w-4" />
             Editar
-          </button>
+          </Button>
         </div>
       </div>
 
@@ -145,148 +150,162 @@ export function ProjetoDetailPage() {
       {activeTab === "geral" && (
         <div className="grid gap-6 md:grid-cols-2">
           {/* Resumo */}
-          <div className="rounded-lg border p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <FileText className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Resumo</h2>
-            </div>
-            <p className="text-sm text-muted-foreground">{projeto.resumo}</p>
-            <div className="pt-2">
-              <h3 className="text-sm font-medium mb-1">Objeto</h3>
-              <p className="text-sm text-muted-foreground">{projeto.objeto}</p>
-            </div>
-          </div>
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Resumo</h2>
+              </div>
+              <p className="text-sm text-muted-foreground">{projeto.resumo}</p>
+              <div className="pt-2">
+                <h3 className="text-sm font-medium mb-1">Objeto</h3>
+                <p className="text-sm text-muted-foreground">{projeto.objeto}</p>
+              </div>
+            </CardContent>
+          </Card>
 
           {/* Financeiro */}
-          <div className="rounded-lg border p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Informações Financeiras</h2>
-            </div>
-            <div className="grid gap-3">
-              <div>
-                <p className="text-sm text-muted-foreground">Valor Total</p>
-                <p className="text-2xl font-bold">
-                  {new Intl.NumberFormat("pt-BR", {
-                    style: "currency",
-                    currency: projeto.moeda || "BRL",
-                  }).format(projeto.valor)}
-                </p>
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <DollarSign className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Informações Financeiras</h2>
               </div>
-              <div className="grid grid-cols-2 gap-4 pt-2">
+              <div className="grid gap-3">
                 <div>
-                  <p className="text-xs text-muted-foreground">AMF</p>
-                  <p className="text-sm font-medium">{projeto.amf}%</p>
+                  <p className="text-sm text-muted-foreground">Valor Total</p>
+                  <p className="text-2xl font-bold">
+                    {new Intl.NumberFormat("pt-BR", {
+                      style: "currency",
+                      currency: "BRL",
+                    }).format(projeto.valor)}
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground">AMF</p>
+                    <p className="text-sm font-medium">{projeto.amf}%</p>
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Tipo Orçamento</p>
+                    <p className="text-sm font-medium">
+                      {TipoOrcamentoLabels[projeto.tipoOrcamento]}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Responsáveis */}
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <User className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Responsáveis</h2>
+              </div>
+              <div className="grid gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Coordenador</p>
+                  <p className="text-sm font-medium">{projeto.coordenador}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-muted-foreground">Tipo Orçamento</p>
+                  <p className="text-xs text-muted-foreground">Executor</p>
+                  <p className="text-sm font-medium">{projeto.executor}</p>
+                </div>
+                {projeto.coExecutor && (
+                  <div>
+                    <p className="text-xs text-muted-foreground">Co-Executor</p>
+                    <p className="text-sm font-medium">{projeto.coExecutor}</p>
+                  </div>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Prazos */}
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <div className="flex items-center gap-2">
+                <Calendar className="h-5 w-5 text-muted-foreground" />
+                <h2 className="text-lg font-semibold">Prazos</h2>
+              </div>
+              <div className="grid gap-3">
+                <div>
+                  <p className="text-xs text-muted-foreground">Início Previsto</p>
                   <p className="text-sm font-medium">
-                    {TipoOrcamentoLabels[projeto.tipoOrcamento]}
+                    {new Date(projeto.inicioPrevisto).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Término Previsto</p>
+                  <p className="text-sm font-medium">
+                    {new Date(projeto.terminoPrevisto).toLocaleDateString("pt-BR")}
+                  </p>
+                </div>
+                <div>
+                  <p className="text-xs text-muted-foreground">Data Implantação</p>
+                  <p className="text-sm font-medium">
+                    {new Date(projeto.dataImplantacao).toLocaleDateString("pt-BR")}
                   </p>
                 </div>
               </div>
-            </div>
-          </div>
-
-          {/* Responsáveis */}
-          <div className="rounded-lg border p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <User className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Responsáveis</h2>
-            </div>
-            <div className="grid gap-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Coordenador</p>
-                <p className="text-sm font-medium">{projeto.coordenador}</p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Executor</p>
-                <p className="text-sm font-medium">{projeto.executor}</p>
-              </div>
-              {projeto.coExecutor && (
-                <div>
-                  <p className="text-xs text-muted-foreground">Co-Executor</p>
-                  <p className="text-sm font-medium">{projeto.coExecutor}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Prazos */}
-          <div className="rounded-lg border p-6 space-y-4">
-            <div className="flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-lg font-semibold">Prazos</h2>
-            </div>
-            <div className="grid gap-3">
-              <div>
-                <p className="text-xs text-muted-foreground">Início Previsto</p>
-                <p className="text-sm font-medium">
-                  {new Date(projeto.inicioPrevisto).toLocaleDateString("pt-BR")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Término Previsto</p>
-                <p className="text-sm font-medium">
-                  {new Date(projeto.terminoPrevisto).toLocaleDateString("pt-BR")}
-                </p>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground">Data Implantação</p>
-                <p className="text-sm font-medium">
-                  {new Date(projeto.dataImplantacao).toLocaleDateString("pt-BR")}
-                </p>
-              </div>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
       {activeTab === "subprojetos" && (
         <div className="space-y-4">
           {projeto.subprojetos.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">
-              Nenhum subprojeto cadastrado
-            </p>
+            <Card>
+              <CardContent className="pt-6">
+                <p className="text-center text-muted-foreground py-12">
+                  Nenhum subprojeto cadastrado
+                </p>
+              </CardContent>
+            </Card>
           ) : (
             projeto.subprojetos.map((sub, index) => (
-              <div key={index} className="rounded-lg border p-6 space-y-4">
-                <div>
-                  <h3 className="text-lg font-semibold">{sub.nome}</h3>
-                  <p className="text-sm text-muted-foreground">
-                    {sub.codigoSubprojeto}
-                  </p>
-                </div>
-                <p className="text-sm">{sub.objeto}</p>
-                <div className="flex gap-4 text-sm">
+              <Card key={index}>
+                <CardContent className="pt-6 space-y-4">
                   <div>
-                    <span className="text-muted-foreground">Início: </span>
-                    {new Date(sub.inicioPrevisto).toLocaleDateString("pt-BR")}
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground">Término: </span>
-                    {new Date(sub.terminoPrevisto).toLocaleDateString("pt-BR")}
-                  </div>
-                </div>
-                {sub.rubricas.length > 0 && (
-                  <div>
-                    <p className="text-sm font-medium mb-2">
-                      Rubricas ({sub.rubricas.length})
+                    <h3 className="text-lg font-semibold">{sub.nome}</h3>
+                    <p className="text-sm text-muted-foreground">
+                      {sub.codigoSubprojeto}
                     </p>
-                    <div className="grid gap-2">
-                      {sub.rubricas.map((rub, ridx) => (
-                        <div
-                          key={ridx}
-                          className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
-                        >
-                          <span>{rub.descricao}</span>
-                          <span className="text-muted-foreground">{rub.codigo}</span>
-                        </div>
-                      ))}
+                  </div>
+                  <p className="text-sm">{sub.objeto}</p>
+                  <div className="flex gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Início: </span>
+                      {new Date(sub.inicioPrevisto).toLocaleDateString("pt-BR")}
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Término: </span>
+                      {new Date(sub.terminoPrevisto).toLocaleDateString("pt-BR")}
                     </div>
                   </div>
-                )}
-              </div>
+                  {sub.rubricas.length > 0 && (
+                    <div>
+                      <p className="text-sm font-medium mb-2">
+                        Rubricas ({sub.rubricas.length})
+                      </p>
+                      <div className="grid gap-2">
+                        {sub.rubricas.map((rub, ridx) => (
+                          <div
+                            key={ridx}
+                            className="flex items-center justify-between rounded-md border px-3 py-2 text-sm"
+                          >
+                            <span>{rub.descricao}</span>
+                            <span className="text-muted-foreground">{rub.codigo}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
             ))
           )}
         </div>
@@ -295,43 +314,49 @@ export function ProjetoDetailPage() {
       {activeTab === "documentos" && (
         <div className="space-y-4">
           <div className="flex justify-end">
-            <button
+            <Button
               onClick={() => setShowDocumentUpload(!showDocumentUpload)}
-              className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-3"
             >
               <Upload className="h-4 w-4" />
               {showDocumentUpload ? "Cancelar" : "Adicionar Documento"}
-            </button>
+            </Button>
           </div>
 
           {showDocumentUpload && (
-            <div className="rounded-lg border p-6">
-              <DocumentUpload onFileSelect={handleDocumentUpload} />
-            </div>
+            <Card>
+              <CardContent className="pt-6">
+                <DocumentUpload onFileSelect={handleDocumentUpload} />
+              </CardContent>
+            </Card>
           )}
 
           <div className="space-y-2">
             {!projeto.documentos || projeto.documentos.length === 0 ? (
-              <p className="text-center text-muted-foreground py-12">
-                Nenhum documento anexado
-              </p>
+              <Card>
+                <CardContent className="pt-6">
+                  <p className="text-center text-muted-foreground py-12">
+                    Nenhum documento anexado
+                  </p>
+                </CardContent>
+              </Card>
             ) : (
               projeto.documentos.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
-                  <div className="flex items-center gap-3">
-                    <FileText className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm font-medium">{doc.nomeDocumento}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {new Date(doc.dataUpload).toLocaleDateString("pt-BR")} •{" "}
-                        {(doc.tamanho / 1024).toFixed(2)} KB
-                      </p>
+                <Card key={doc.id}>
+                  <CardContent className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <FileText className="h-5 w-5 text-muted-foreground" />
+                        <div>
+                          <p className="text-sm font-medium">{doc.nomeDocumento}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {new Date(doc.dataUpload).toLocaleDateString("pt-BR")} •{" "}
+                            {(doc.tamanho / 1024).toFixed(2)} KB
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-                </div>
+                  </CardContent>
+                </Card>
               ))
             )}
           </div>
@@ -343,7 +368,7 @@ export function ProjetoDetailPage() {
         isOpen={showStatusModal}
         onClose={() => setShowStatusModal(false)}
         projetoId={projeto.id}
-        currentEtapa={projeto.etapaAtual}
+        currentEtapa={projeto.etapa}
         onSuccess={refetch}
       />
     </div>

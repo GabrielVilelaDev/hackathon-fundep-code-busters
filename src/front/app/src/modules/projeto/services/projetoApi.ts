@@ -7,7 +7,7 @@ import type {
   RubricaResponse,
 } from "../types/projeto.types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:5052";
+const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
 
 class ProjetoApiService {
   /**
@@ -118,6 +118,24 @@ class ProjetoApiService {
       }
       const error = await response.json();
       throw new Error(error.message || "Erro ao adicionar documento");
+    }
+
+    return response.json();
+  }
+
+  /**
+   * Listar todos os projetos
+   */
+  async listarProjetos(): Promise<ProjetoResponse[]> {
+    const response = await fetch(`${API_BASE_URL}/projetos`, {
+      method: "GET",
+      headers: {
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error("Erro ao listar projetos");
     }
 
     return response.json();

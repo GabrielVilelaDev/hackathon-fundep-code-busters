@@ -1,7 +1,8 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Eye, Edit, RefreshCw, Search } from "lucide-react";
-import { LoadingSpinner } from "@design-system";
+import { Plus, Eye, Edit, RefreshCw, Search, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
+import { LoadingSpinner, Button, Card, CardContent } from "@design-system";
 import { EtapaProjetoLabels, type ProjetoResponse } from "../types/projeto.types";
 import { StatusUpdateModal } from "../components/StatusUpdateModal";
 import { projetoApi } from "../services/projetoApi";
@@ -10,18 +11,25 @@ export function ProjetosListPage() {
   const navigate = useNavigate();
   const [projetos, setProjetos] = useState<ProjetoResponse[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedProjeto, setSelectedProjeto] = useState<ProjetoResponse | null>(null);
   const [showStatusModal, setShowStatusModal] = useState(false);
 
-  // Mock: Na prática, você precisaria de um endpoint para listar todos os projetos
   const loadProjetos = async () => {
     setLoading(true);
-    // Simulando carregamento
-    setTimeout(() => {
+    setError(null);
+    try {
+      const data = await projetoApi.listarProjetos();
+      setProjetos(data);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Erro ao carregar projetos";
+      setError(errorMessage);
       setProjetos([]);
+      toast.error(errorMessage);
+    } finally {
       setLoading(false);
-    }, 500);
+    }
   };
 
   useEffect(() => {
@@ -54,28 +62,39 @@ export function ProjetosListPage() {
             Gerencie todos os projetos cadastrados
           </p>
         </div>
-        <button
-          onClick={() => navigate("/projetos/novo")}
-          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-10 px-4 py-2"
-        >
+        <Button onClick={() => navigate("/projetos/novo")}>
           <Plus className="h-4 w-4" />
           Novo Projeto
-        </button>
+        </Button>
       </div>
 
       {/* Filtros */}
-      <div className="flex flex-col gap-4 md:flex-row md:items-center">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="text"
-            placeholder="Buscar por título, código ou coordenador..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex h-10 w-full rounded-md border border-input bg-transparent pl-10 pr-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
-          />
-        </div>
-      </div>
+      <Card>
+        <CardContent className="pt-6">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="Buscar por título, código ou coordenador..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex h-10 w-full rounded-md border border-input bg-transparent pl-10 pr-3 py-2 text-sm shadow-sm transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50"
+            />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Error */}
+      {error && (
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <div className="flex items-center gap-2 text-destructive">
+              <AlertCircle className="h-5 w-5" />
+              <p>{error}</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tabela */}
       {loading ? (
@@ -83,96 +102,105 @@ export function ProjetosListPage() {
           <LoadingSpinner />
         </div>
       ) : filteredProjetos.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-12 text-center">
-          <p className="text-muted-foreground">
-            {searchTerm
-              ? "Nenhum projeto encontrado com os filtros aplicados."
-              : "Nenhum projeto cadastrado. Clique em 'Novo Projeto' para começar."}
-          </p>
-        </div>
+        <Card>
+          <CardContent className="pt-6">
+            <div className="text-center py-6">
+              <p className="text-muted-foreground">
+                {searchTerm
+                  ? "Nenhum projeto encontrado com os filtros aplicados."
+                  : "Nenhum projeto cadastrado. Clique em 'Novo Projeto' para começar."}
+              </p>
+            </div>
+          </CardContent>
+        </Card>
       ) : (
-        <div className="rounded-md border">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="h-12 px-4 text-left align-middle font-medium">
-                    Código
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium">
-                    Título
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium">
-                    Coordenador
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium">
-                    Etapa
-                  </th>
-                  <th className="h-12 px-4 text-left align-middle font-medium">
-                    Valor
-                  </th>
-                  <th className="h-12 px-4 text-right align-middle font-medium">
-                    Ações
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProjetos.map((projeto) => (
-                  <tr key={projeto.id} className="border-b transition-colors hover:bg-muted/50">
-                    <td className="p-4 align-middle font-mono text-xs">
-                      {projeto.codigoProjeto}
-                    </td>
-                    <td className="p-4 align-middle">
-                      <div className="max-w-[300px]">
-                        <p className="font-medium truncate">{projeto.titulo}</p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {projeto.resumo}
-                        </p>
-                      </div>
-                    </td>
-                    <td className="p-4 align-middle">{projeto.coordenador}</td>
-                    <td className="p-4 align-middle">
-                      <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
-                        {EtapaProjetoLabels[projeto.etapaAtual]}
-                      </span>
-                    </td>
-                    <td className="p-4 align-middle">
-                      {new Intl.NumberFormat("pt-BR", {
-                        style: "currency",
-                        currency: projeto.moeda || "BRL",
-                      }).format(projeto.valor)}
-                    </td>
-                    <td className="p-4 align-middle text-right">
-                      <div className="flex items-center justify-end gap-2">
-                        <button
-                          onClick={() => navigate(`/projetos/${projeto.id}`)}
-                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
-                          title="Visualizar"
-                        >
-                          <Eye className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => navigate(`/projetos/${projeto.id}/editar`)}
-                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
-                          title="Editar"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={() => handleStatusUpdate(projeto)}
-                          className="inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 hover:bg-accent hover:text-accent-foreground h-8 w-8"
-                          title="Atualizar Status"
-                        >
-                          <RefreshCw className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </td>
+        <Card>
+          <CardContent className="p-0">
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50">
+                    <th className="h-12 px-4 text-left align-middle font-medium">
+                      Código
+                    </th>
+                    <th className="h-12 px-4 text-left align-middle font-medium">
+                      Título
+                    </th>
+                    <th className="h-12 px-4 text-left align-middle font-medium">
+                      Coordenador
+                    </th>
+                    <th className="h-12 px-4 text-left align-middle font-medium">
+                      Etapa
+                    </th>
+                    <th className="h-12 px-4 text-left align-middle font-medium">
+                      Valor
+                    </th>
+                    <th className="h-12 px-4 text-right align-middle font-medium">
+                      Ações
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
+                </thead>
+                <tbody>
+                  {filteredProjetos.map((projeto) => (
+                    <tr key={projeto.id} className="border-b transition-colors hover:bg-muted/50">
+                      <td className="p-4 align-middle font-mono text-xs">
+                        {projeto.codigoProjeto}
+                      </td>
+                      <td className="p-4 align-middle">
+                        <div className="max-w-[300px]">
+                          <p className="font-medium truncate">{projeto.titulo}</p>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {projeto.resumo}
+                          </p>
+                        </div>
+                      </td>
+                      <td className="p-4 align-middle">{projeto.coordenador}</td>
+                      <td className="p-4 align-middle">
+                        <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2">
+                          {EtapaProjetoLabels[projeto.etapa]}
+                        </span>
+                      </td>
+                      <td className="p-4 align-middle">
+                        {new Intl.NumberFormat("pt-BR", {
+                          style: "currency",
+                          currency: projeto.moeda || "BRL",
+                        }).format(projeto.valor)}
+                      </td>
+                      <td className="p-4 align-middle text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(`/projetos/${projeto.id}`)}
+                            title="Visualizar"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => navigate(`/projetos/${projeto.id}/editar`)}
+                            title="Editar"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleStatusUpdate(projeto)}
+                            title="Atualizar Status"
+                          >
+                            <RefreshCw className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </CardContent>
+        </Card>
       )}
 
       {/* Status Update Modal */}
@@ -184,7 +212,7 @@ export function ProjetosListPage() {
             setSelectedProjeto(null);
           }}
           projetoId={selectedProjeto.id}
-          currentEtapa={selectedProjeto.etapaAtual}
+          currentEtapa={selectedProjeto.etapa}
           onSuccess={handleStatusSuccess}
         />
       )}
