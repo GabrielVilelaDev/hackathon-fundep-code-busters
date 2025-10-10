@@ -27,6 +27,32 @@ services:
       - "com.fundep.version=1.0.0"
       - "com.fundep.description=Sistema de Gerenciamento de Projetos FUNDEP"
 
+  projetos-web:
+    build:
+      context: ./front/
+      dockerfile: app/Dockerfile
+    container_name: fundep-projetos-web
+    ports:
+      - "3000:80"
+    environment:
+      - TZ=America/Sao_Paulo
+      - VITE_API_URL=http://localhost:8080
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:80/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - fundep-network
+    depends_on:
+      - projetos-api
+    labels:
+      - "com.fundep.service=projetos-web"
+      - "com.fundep.version=1.0.0"
+      - "com.fundep.description=Frontend do Sistema de Gerenciamento de Projetos FUNDEP"
+
   inscricao-evento-api:
     build:
       context: ./back/Hackathon.InscricaoEvento/
