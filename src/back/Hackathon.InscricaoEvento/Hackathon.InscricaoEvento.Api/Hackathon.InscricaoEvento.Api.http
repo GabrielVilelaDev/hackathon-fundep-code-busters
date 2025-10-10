@@ -1,0 +1,6 @@
+@Hackathon.InscricaoEvento.Api_HostAddress = http://localhost:5131
+
+GET {{Hackathon.InscricaoEvento.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
