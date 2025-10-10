@@ -136,8 +136,12 @@ describe("Sidebar", () => {
     it("renders dropdown titles", () => {
       render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
 
-      expect(screen.getByText("Interno")).toBeInTheDocument();
-      expect(screen.getByText("Externo")).toBeInTheDocument();
+      // Use getAllByText since titles appear in both label and tooltip
+      const internoElements = screen.getAllByText("Interno");
+      const externoElements = screen.getAllByText("Externo");
+      
+      expect(internoElements.length).toBeGreaterThan(0);
+      expect(externoElements.length).toBeGreaterThan(0);
     });
 
     it("renders all menu items across groups by default (expanded)", () => {
@@ -150,13 +154,16 @@ describe("Sidebar", () => {
 
     it("toggles dropdown group visibility", async () => {
       const user = userEvent.setup();
-      render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
+      const { container } = render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
 
       // Initially, items should be visible (expanded by default)
       expect(screen.getByTitle("Home")).toBeInTheDocument();
       
-      // Find and click the dropdown button for "Interno"
-      const internoButton = screen.getByText("Interno").closest("button");
+      // Find the dropdown button by looking for button containing the label
+      const buttons = container.querySelectorAll("button");
+      const internoButton = Array.from(buttons).find(btn => 
+        btn.querySelector("label")?.textContent === "Interno"
+      );
       expect(internoButton).toBeInTheDocument();
       
       if (internoButton) {
@@ -219,7 +226,107 @@ describe("Sidebar", () => {
       
       expect(screen.getByTitle("Home")).toBeInTheDocument();
       expect(screen.getByTitle("Profile")).toBeInTheDocument();
-      expect(screen.getByText("Settings")).toBeInTheDocument();
+      
+      // Use getAllByText since "Settings" appears in both label and tooltip
+      const settingsElements = screen.getAllByText("Settings");
+      expect(settingsElements.length).toBeGreaterThan(0);
+    });
+
+    it("dropdown works when sidebar is collapsed", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
+
+      // Find and click the sidebar toggle button to collapse
+      const sidebarToggleButton = container.querySelector("button:not([title])");
+      if (sidebarToggleButton) {
+        await user.click(sidebarToggleButton);
+      }
+
+      // Items should still be visible after collapsing sidebar (expanded by default)
+      expect(screen.getByTitle("Home")).toBeInTheDocument();
+      
+      // Find the dropdown button by first letter "I" for "Interno"
+      const internoButton = screen.getByText("I").closest("button");
+      expect(internoButton).toBeInTheDocument();
+      
+      if (internoButton) {
+        await user.click(internoButton);
+        
+        // After clicking, items should be hidden
+        expect(screen.queryByTitle("Home")).not.toBeInTheDocument();
+        expect(screen.queryByTitle("Profile")).not.toBeInTheDocument();
+        
+        // Click again to expand
+        await user.click(internoButton);
+        
+        // Items should be visible again
+        expect(screen.getByTitle("Home")).toBeInTheDocument();
+        expect(screen.getByTitle("Profile")).toBeInTheDocument();
+      }
+    });
+
+    it("shows first letter of group title when collapsed", async () => {
+      const user = userEvent.setup();
+      const { container } = render(<Sidebar MenuOptions={mockMenuOptionsWithDropdowns} />);
+
+      // Find and click the sidebar toggle button to collapse
+      const sidebarToggleButton = container.querySelector("button:not([title])");
+      if (sidebarToggleButton) {
+        await user.click(sidebarToggleButton);
+      }
+
+      // Should show first letters "I" and "E"
+      expect(screen.getByText("I")).toBeInTheDocument();
+      expect(screen.getByText("E")).toBeInTheDocument();
+    });
+
+    it("groups without titles always show items", async () => {
+      const user = userEvent.setup();
+      const mixedOptions: MenuGroupProps[] = [
+        {
+          items: [
+            {
+              label: "Home",
+              icon: Home,
+              onClick: vi.fn()
+            }
+          ]
+        },
+        {
+          title: "Settings",
+          items: [
+            {
+              label: "Profile",
+              icon: User,
+              onClick: vi.fn()
+            }
+          ]
+        }
+      ];
+
+      const { container } = render(<Sidebar MenuOptions={mixedOptions} />);
+      
+      // Home should always be visible (no title group)
+      expect(screen.getByTitle("Home")).toBeInTheDocument();
+      
+      // Profile should be visible initially
+      expect(screen.getByTitle("Profile")).toBeInTheDocument();
+      
+      // Find the Settings dropdown button by looking for button containing the label
+      const buttons = container.querySelectorAll("button");
+      const settingsButton = Array.from(buttons).find(btn => 
+        btn.querySelector("label")?.textContent === "Settings"
+      );
+      
+      if (settingsButton) {
+        await user.click(settingsButton);
+        
+        // Home should still be visible (no title group)
+        expect(screen.getByTitle("Home")).toBeInTheDocument();
+        
+        // Profile should be hidden
+        expect(screen.queryByTitle("Profile")).not.toBeInTheDocument();
+      }
     });
   });
 });
