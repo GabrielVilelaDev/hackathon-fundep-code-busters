@@ -27,6 +27,11 @@ export const API_ENDPOINTS: Record<string, ApiEndpoint> = {
     baseURL: import.meta.env.VITE_PROSPECCAO_API_URL || 'http://localhost:3004/api',
     timeout: 30000,
   },
+  eventos: {
+    name: 'Eventos API',
+    baseURL: import.meta.env.VITE_EVENTOS_API_URL || 'http://localhost:8081',
+    timeout: 30000,
+  },
 }
 
 // Default API endpoint

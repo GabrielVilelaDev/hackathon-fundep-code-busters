@@ -50,6 +50,20 @@ const EditarProjetoPage = lazy(
   () => import("@/modules/projeto/pages/EditarProjetoPage")
 );
 
+// Evento Pages
+const EventosListPage = lazy(
+  () => import("@/modules/evento/pages/EventosListPage")
+);
+const NovoEventoPage = lazy(
+  () => import("@/modules/evento/pages/NovoEventoPage")
+);
+const EventoDetailPage = lazy(
+  () => import("@/modules/evento/pages/EventoDetailPage")
+);
+const MinhasMatriculasPage = lazy(
+  () => import("@/modules/evento/pages/MinhasMatriculasPage")
+);
+
 const LazyRoute = ({ children }: { children: React.ReactNode }) => {
   return <Suspense fallback={<LoadingSpinner fullScreen />}>{children}</Suspense>;
 };
@@ -144,6 +158,27 @@ export const router = createBrowserRouter([
             element: <EditarProjetoPage />,
           },
         ],
+      },
+      {
+        path: "eventos",
+        children: [
+          {
+            index: true,
+            element: <EventosListPage />,
+          },
+          {
+            path: "novo",
+            element: <NovoEventoPage />,
+          },
+          {
+            path: ":id",
+            element: <EventoDetailPage />,
+          },
+        ],
+      },
+      {
+        path: "matriculas",
+        element: <MinhasMatriculasPage />,
       },
     ],
   },

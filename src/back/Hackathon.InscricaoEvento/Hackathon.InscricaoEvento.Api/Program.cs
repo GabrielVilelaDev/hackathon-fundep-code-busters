@@ -23,6 +23,16 @@ builder.Services.AddScoped<ListarMatriculasHandler>();
 // Registrar reposit�rios
 builder.Services.AddSingleton<IEventoRepository, EventoRepositoryInMemory>();
 builder.Services.AddSingleton<IMatriculaRepository, MatriculaRepositoryInMemory>();
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy(name: "AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin() // Permite qualquer origem
+                  .AllowAnyMethod()   // Permite qualquer método HTTP (GET, POST, etc.)
+                  .AllowAnyHeader();  // Permite qualquer cabeçalho na requisição
+        });
+});
 
 var app = builder.Build();
 
@@ -40,6 +50,8 @@ if (app.Environment.IsDevelopment() ||
 }
 
 app.UseHttpsRedirection();
+
+app.UseCors("AllowAll");
 
 // Endpoint de sa�de para health check
 app.MapGet("/health", () => Results.Ok(new

@@ -17,12 +17,13 @@ export const authApi = createApiInstance(API_ENDPOINTS.auth)
 export const projectsApi = createApiInstance(API_ENDPOINTS.projects)
 export const reportsApi = createApiInstance(API_ENDPOINTS.reports)
 export const prospeccaoApi = createApiInstance(API_ENDPOINTS.prospeccao)
+export const eventosApi = createApiInstance(API_ENDPOINTS.eventos)
 
 // Default API instance (for backwards compatibility)
 export const api = authApi
 
 // List of all API instances to apply interceptors
-const apiInstances = [authApi, projectsApi, reportsApi, prospeccaoApi]
+const apiInstances = [authApi, projectsApi, reportsApi, prospeccaoApi, eventosApi]
 
 // Request interceptor - Add auth token to all instances
 apiInstances.forEach(instance => {

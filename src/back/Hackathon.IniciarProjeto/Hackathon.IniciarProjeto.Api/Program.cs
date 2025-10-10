@@ -52,17 +52,6 @@ builder.Services.AddCors(options =>
         });
 });
 
-
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.AllowAnyOrigin() // Allows requests from any origin
-              .AllowAnyHeader()  // Allows any HTTP header
-              .AllowAnyMethod(); // Allows any HTTP method (GET, POST, PUT, DELETE, etc.)
-    });
-});
-
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.

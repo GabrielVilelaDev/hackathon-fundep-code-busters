@@ -1,7 +1,7 @@
 import { Outlet, useNavigate } from "react-router-dom";
 import { Header } from "../Header";
 import { Sidebar } from "@design-system";
-import { LayoutDashboard, FolderKanban } from "lucide-react";
+import { LayoutDashboard, FolderKanban, Calendar } from "lucide-react";
 
 export default function RootLayout() {
   const navigate = useNavigate();
@@ -23,6 +23,13 @@ export default function RootLayout() {
             icon: FolderKanban,
             onClick: () => {
               navigate("/projetos");
+            },
+          },
+          {
+            label: "Eventos",
+            icon: Calendar,
+            onClick: () => {
+              navigate("/eventos");
             },
           },
         ]} />
