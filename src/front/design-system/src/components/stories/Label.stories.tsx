@@ -1,5 +1,4 @@
 import type { Meta, StoryObj } from "@storybook/react";
-import { Mail } from "lucide-react";
 
 import { Input } from "../ui/input";
 import { Label } from "../ui/label";

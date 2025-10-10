@@ -104,14 +104,6 @@ export const CustomWidth: Story = {
   }
 };
 
-export const WithLoadingState: Story = {
-  args: {
-    headers: basicHeaders,
-    data: basicData,
-    isLoading: true
-  }
-};
-
 export const WithErrorState: Story = {
   args: {
     headers: basicHeaders,

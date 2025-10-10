@@ -26,7 +26,7 @@ export function Sidebar({
     <aside
       className={`
         relative h-100vh bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 
-        border-r border-border/40 transition-all duration-300 ease-in-out
+        border-r border-border/40 transition-width duration-300 ease-in-out
         ${isCollapsed ? "w-16" : "w-16 md:w-64"}
       `}
     >
